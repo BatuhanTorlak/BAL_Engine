@@ -7,7 +7,7 @@
 #include "linux/lui.h"
 #endif // OP Check
 
-#include "math/Point.h"
+#include "math/point.h"
 #include "colormap/color.h"
 
 /// @brief Generic window manager

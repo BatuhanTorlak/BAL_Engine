@@ -1,9 +1,9 @@
 #ifndef MATH_H
 #define MATH_H
 
-#include "Vector2.h"
-#include "Vector3.h"
-#include "Point.h"
+#include "math/vector2.h"
+#include "math/vector3.h"
+#include "math/point.h"
 
 #define PI 3.1415926535897932
 #define RAD_TO_DEG(x) (x * PI / 180)
