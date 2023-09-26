@@ -2,9 +2,9 @@
 #define UI_H
 
 #ifdef OP_WIN
-#include "windows/wui.h"
+#include "ui/windows/wui.h"
 #elif OP_LIN
-#include "linux/lui.h"
+#include "ui/linux/lui.h"
 #endif // OP Check
 
 #include "math/point.h"
