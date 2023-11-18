@@ -1,9 +1,9 @@
 #ifndef MATH_H
 #define MATH_H
 
-#include "math/vector2.h"
-#include "math/vector3.h"
-#include "math/point.h"
+#include "vector2.h"
+#include "vector3.h"
+#include "point.h"
 
 #define PI 3.1415926535897932
 #define RAD_TO_DEG(x) (x * PI / 180)
@@ -12,47 +12,53 @@
 /// @brief 
 /// @param number radian
 /// @return 
-float sinf(float number);
+float Sinf(float number);
 /// @brief 
 /// @param number radian
 /// @return 
-float cosf(float number);
+float Cosf(float number);
 /// @brief 
 /// @param number radian
 /// @return 
-float tanf(float number);
+float Tanf(float number);
 /// @brief 
 /// @param number radian
 /// @return 
-float cotf(float number);
+float Cotf(float number);
 /// @brief 
 /// @param number sinus
 /// @return 
-float asinf(float number);
+float Asinf(float number);
 /// @brief 
 /// @param number cosinus
 /// @return radian
-float acosf(float number);
+float Acosf(float number);
 /// @brief 
 /// @param number sin/cos
 /// @return radian
-float atanf(float number);
+float Atanf(float number);
 /// @brief 
 /// @param number cos/sin
 /// @return radian
-float acotf(float number);
-float sqrtf(float number);
-float powerf(float number, float power);
+float Acotf(float number);
+float Sqrtf(float number);
+float Powerf(float number, float power);
+float Roundf(float number);
+float Absf(float number);
+float Clampf(const float number, const float min, const float max);
 
-double sin(double number);
-double cos(double number);
-double tan(double number);
-double cot(double number);
-double asin(double number);
-double acos(double number);
-double atan(double number);
-double acot(double number);
-double sqrt(double number);
-double power(double number, double power);
+int RoundInt(float number);
+int AbsInt(int number);
+
+double Sin(double number);
+double Cos(double number);
+double Tan(double number);
+double Cot(double number);
+double Asin(double number);
+double Acos(double number);
+double Atan(double number);
+double Acot(double number);
+double Sqrt(double number);
+double Power(double number, double power);
 
 #endif
