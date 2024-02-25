@@ -13,7 +13,7 @@ ColorMap* ColorMapCreate(const int width, const int height)
     Color* _clr = malloc(_map->linearSize * sizeof(Color));
     for (int x = 0; x < _map->linearSize; x++)
     {
-        _clr[x] = (Color){255, 255, 255};
+        _clr[x] = ColorCreate(255, 255, 255);
     }
     _map->colors = _clr;
     _map->ratio = (float)width / (float)height;
@@ -38,8 +38,8 @@ void ColorMapResize(ColorMap* colorMap, const int newWidth, const int newHeight)
         _nH = newHeight;
     else
         _nH = colorMap->height;
-    colorMap->linearSize = newWidth * newHeight;
-    Color* _clr = malloc(colorMap->linearSize * sizeof(Color));
+    int newLinearSize = newWidth * newHeight;
+    Color* _clr = malloc(newLinearSize * sizeof(Color));
     for (int y = 0; y < _nH; y++)
     {
         for (int x = 0; x < _nW; x++)
@@ -52,6 +52,7 @@ void ColorMapResize(ColorMap* colorMap, const int newWidth, const int newHeight)
     colorMap->height = newHeight;
     colorMap->colors = _clr;
     colorMap->ratio = (float)newWidth / (float)newHeight;
+    colorMap->linearSize = newLinearSize;
     free(__);
 }
 
@@ -71,20 +72,20 @@ Color ColorMapGetPixel(const ColorMap* colorMap, const Point2D position)
 {
     if ((position.x | position.y) >= 0 && position.x < colorMap->width && position.y < colorMap->height)
         return ColorMapPixel(colorMap, position.x, position.y);
-    return (Color){0, 0, 0};
+    return ColorCreate(255, 255, 255);
 }
 
 Color ColorMapGetPixelA(const ColorMap* colorMap, const int x, const int y)
 {
     if ((x | y) >= 0 && x < colorMap->width && y < colorMap->height)
         return ColorMapPixel(colorMap, x, y);
-    return (Color){0, 0, 0};
+    return ColorCreate(255, 255, 255);
 }
 
 void ColorMapDrawLine(const ColorMap* colorMap, Point2D start, Point2D end, const Color color)
 {
-    register int _a = end.x - start.x;
-    register int _b = end.y - end.x;
+    int _a = end.x - start.x;
+    int _b = end.y - start.y;
     const int _w = colorMap->width;
     const int _h = colorMap->height;
     int sX;
@@ -176,4 +177,15 @@ void ColorMapSave(const ColorMap* colorMap, const char* location)
     fclose(_f);
     
     free(_txt);
+}
+
+void ColorMapClear(const ColorMap* colorMap)
+{
+    for (int x = 0; x < colorMap->width; x++)
+    {
+        for (int y = 0; y < colorMap->height; y++)
+        {
+            ColorMapPixel(colorMap, x, y) = ColorCreate(255, 255, 255);
+        }
+    }
 }

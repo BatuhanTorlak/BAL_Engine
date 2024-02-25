@@ -14,6 +14,12 @@ typedef struct WinWindow_t
     HDC drawingContentHandler;
     PColorMap colorMap;
     WindowEvents* events;
+    struct drawing_t
+    {
+        Color* bitmapColors;
+        HBITMAP bitmap;
+        HDC bitmapDrawingContentHandler;
+    } drawing;
     int width;
     int height;
     char isAlive;
@@ -27,6 +33,6 @@ void WinWindowDrawLineA(const WinWindow* win, int x1, int y1, int x2, int y2, co
 void WinWindowSetEvents(WinWindow* win, WindowEvents* newEvents);
 void WinWindowRender(const WinWindow* win);
 char WinWindowUpdate(const WinWindow* win, const int FPS);
-void WinWindowDestroy(const WinWindow* win);
+void WinWindowDestroy(const WinWindow** win);
 
 #endif // WUI_H

@@ -1,6 +1,7 @@
 #include "wui.h"
 #include <malloc.h>
 #include <stdio.h>
+#include <string.h>
 #include "../../math/math.h"
 
 typedef struct __params_t
@@ -28,51 +29,88 @@ typedef struct WindowList_t
 LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c);
 DWORD WinWindowManagement(__paramsPtr param);
 
-WindowList* allWindows = 0;
+//WindowList* allWindows = 0;
 
 LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
 {
-    WindowList* __wl = allWindows;
-    WinWindow* currentWindow = __wl->win;
-    while (currentWindow->windowHandler != hWnd)
+    if (msg == WM_CREATE)
     {
-        __wl = __wl->previous;
-        if (__wl == 0)
-        {
-            return DefWindowProcW(hWnd, msg, b, c);
-        }
-        currentWindow = __wl->win;
+        CREATESTRUCTW* _crstruct = c;
+        __paramsPtr _params = _crstruct->lpCreateParams;
+        PWinWindow _win = _params->win;
+        SetWindowLongPtrA(hWnd, GWLP_USERDATA, _win);
     }
+
+    WinWindow* currentWindow = (WinWindow*)GetWindowLongPtrA(hWnd, GWLP_USERDATA);
+    if (currentWindow == 0)
+        return DefWindowProcW(hWnd, msg, b, c);
+
     switch (msg)
     {
     case WM_DESTROY:
     case WM_CLOSE:
-        WindowList* _wl = allWindows;
-        WindowList* _nWl = 0;
-        do
-        {
-            if (_wl->win->windowHandler == hWnd)
-            {
-                _wl->win->isAlive = 0;
-                _nWl->previous = _wl->previous;
-                free(_wl);
-            }
-            _nWl = _wl;
-            _wl = _wl->previous;
-        }while (_wl->previous);
+        currentWindow->isAlive = 0;
         break;
     case WM_EXITSIZEMOVE:
         PColorMap _clp = currentWindow->colorMap;
-        if (currentWindow->width != _clp->width || currentWindow->height != _clp->height)
+        int _width = currentWindow->width;
+        int _height = currentWindow->height;
+        if (_width != _clp->width || _height != _clp->height)
         {
-            ColorMapResize(currentWindow->colorMap, currentWindow->width, currentWindow->height);
+            int _nW;
+            int _nH;
+            if (_width < _clp->width)
+                _nW = _width;
+            else
+                _nW = _clp->width;
+            if (_height < _clp->height)
+                _nH = _height;
+            else
+                _nH = _clp->height;
+            
+            int newLinearSize = _width * _height;
+
+            BITMAPINFO _info = (BITMAPINFO){
+                .bmiHeader = {
+                    .biPlanes = 1,
+                    .biBitCount = sizeof(Color) * 8,
+                    .biWidth = _width,
+                    .biHeight = _height,
+                    .biCompression = BI_RGB,
+                    .biSize = sizeof(BITMAPINFOHEADER)
+                }
+            };
+            
+            HBITMAP _oldBitmap = currentWindow->drawing.bitmap;
+            HDC _oldDC = currentWindow->drawing.bitmapDrawingContentHandler;
+
+            Color* _clrs = 0;
+            HBITMAP _newBitmap = CreateDIBSection(0, &_info, DIB_RGB_COLORS, &(_clrs), 0, 0);
+            HDC _dc = CreateCompatibleDC(0);
+
+            SelectObject(_dc, _newBitmap);
+
+            BitBlt(_dc, 0, 0, _nW, _nH, _oldDC, 0, 0, SRCCOPY);
+
+            _clp->width = _width;
+            _clp->height = _height;
+            _clp->colors = _clrs;
+            _clp->ratio = (float)_width / (float)_height;
+            _clp->linearSize = newLinearSize;
+
+            currentWindow->drawing.bitmapColors = _clrs;
+            currentWindow->drawing.bitmap = _newBitmap;
+            currentWindow->drawing.bitmapDrawingContentHandler = _dc;
+
+            DeleteObject(_oldBitmap);
+            DeleteDC(_oldDC);
         }
         break;
     case WM_SIZE:
-        unsigned int _w = LOWORD(c);
-        unsigned int _h = HIWORD(c);
-        currentWindow->width = (int)_w;
-        currentWindow->height = (int)_h;
+        UINT width = LOWORD(c);
+        UINT height = HIWORD(c);
+        currentWindow->width = (int)width;
+        currentWindow->height = (int)height;
         break;
     }
     return DefWindowProcW(hWnd, msg, b, c);
@@ -89,20 +127,45 @@ DWORD WinWindowManagement(__paramsPtr param)
 
     ATOM _ch = RegisterClassW(&_class);
 
-    HWND windowHandler = CreateWindowExW(0, _ch, param->windowName, WS_OVERLAPPEDWINDOW | WS_VISIBLE, 10, 10, param->width, param->height, 0, 0, 0, 0);
-    ShowWindow(windowHandler, SW_SHOW);
+    HWND windowHandler = CreateWindowExW(0, _ch, param->windowName, WS_OVERLAPPEDWINDOW | WS_VISIBLE, 10, 10, param->width, param->height, 0, 0, 0, param);
 
     WinWindow* win = param->win;
+
     win->windowHandler = windowHandler;
     win->windowClass = _class;
     win->drawingContentHandler = GetDC(windowHandler);
-    win->colorMap = ColorMapCreate(param->width, param->height);
+
+    BITMAPINFO _info = {
+        .bmiHeader = {
+            .biPlanes = 1,
+            .biBitCount = sizeof(Color) * 8,
+            .biWidth = param->width,
+            .biHeight = param->height,
+            .biCompression = BI_RGB,
+            .biSize = sizeof(BITMAPINFOHEADER),
+        }
+    };
+
+    win->drawing.bitmapDrawingContentHandler = CreateCompatibleDC(0);
+    win->drawing.bitmap = CreateDIBSection(0, &_info, DIB_RGB_COLORS, &(win->drawing.bitmapColors), 0, 0);
+    SelectObject(win->drawing.bitmapDrawingContentHandler, win->drawing.bitmap);
+
+    PColorMap colorMap = malloc(sizeof(ColorMap));
+    colorMap->width = param->width;
+    colorMap->height = param->height;
+    colorMap->linearSize = param->width * param->height;
+    colorMap->colors = win->drawing.bitmapColors;
+    
+    win->colorMap = colorMap;
+
     win->width = param->width;
     win->height = param->height;
     win->events = 0;
     win->isAlive = 1;
 
     param->started = 0;
+
+    ShowWindow(windowHandler, SW_SHOW);
 
     MSG _msg;
     PMSG _pMsg = &_msg;
@@ -125,14 +188,7 @@ WinWindow* WinWindowCreate(const wchar_t* className, const wchar_t* windowName, 
         .win = _,
         .started = 1
     };
-    WindowList* winList = malloc(sizeof(WindowList));
-    winList->previous = allWindows;
-    if (allWindows == 0)
-    {
-        allWindows = winList;
-    }
-    winList->win = _;
-    _->threadHandler = CreateThread(0, 300, (DWORD(*)(LPVOID))WinWindowManagement, _param, 0, 0);
+    _->threadHandler = CreateThread(0, 3000, (DWORD(*)(LPVOID))WinWindowManagement, _param, 0, 0);
     while (_param->started)
     {
         Sleep(1);
@@ -166,19 +222,9 @@ void WinWindowRender(const WinWindow* win)
 {
     const restrict HDC _hdc = win->drawingContentHandler;
     const restrict PColorMap colorMap = win->colorMap;
-    register union
-    {
-        DWORD colorref;
-        Color color;
-    } CDWORD;
-    for (int x = 0; x < colorMap->width; x++)
-    {
-        for (int y = 0; y < colorMap->height; y++)
-        {
-            CDWORD.color = ColorMapGetPixelA(colorMap, x, y);
-            SetPixel(_hdc, x, y, CDWORD.colorref);
-        }
-    }
+    const restrict HDC bitmapDrawingContentHandler = win->drawing.bitmapDrawingContentHandler;
+
+    BOOL _x = BitBlt(_hdc, 0, 0, colorMap->width, colorMap->height, bitmapDrawingContentHandler, 0, 0, SRCCOPY);
 }
 
 char WinWindowUpdate(const WinWindow* win, const int FPS)
@@ -207,23 +253,18 @@ void WinWindowDestroy(const WinWindow** win)
         return;
     WinWindow* _win = *win;
     *win = 0;
-    WindowList* _wl = allWindows;
-    WindowList* _nWl = 0;
-    do
-    {
-        if (_wl->win == win)
-        {
-            _wl->win->isAlive = 0;
-            _nWl->previous = _wl->previous;
-            free(_wl);
-        }
-        _nWl = _wl;
-        _wl = _wl->previous;
-    }while (_wl->previous);
+
     TerminateThread(_win->threadHandler, 0);
+
     ReleaseDC(_win->windowHandler, _win->drawingContentHandler);
+    DeleteDC(_win->drawing.bitmapDrawingContentHandler);
+
+    DeleteObject(_win->drawing.bitmap);
+
     DestroyWindow(_win->windowHandler);
+
     UnregisterClassW(_win->windowClass.lpszClassName, 0);
-    ColorMapDestroy(_win->colorMap);
+
+    free(_win->colorMap);
     free(_win);
 }

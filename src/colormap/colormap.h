@@ -4,7 +4,7 @@
 #include "color.h"
 #include "../math/point.h"
 
-#define ColorMapPixel(map, x, y) (map)->colors[(y) * (map)->width + (x)]
+#define ColorMapPixel(map, x, y) ((map)->colors[(y) * (map)->width + (x)])
 #define ColorMapPixelA(map, x) map->colors[x]
 
 /// @brief Two dimensional color storage and graphical structer

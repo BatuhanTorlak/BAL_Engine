@@ -11,7 +11,7 @@
 
 /// @brief 
 /// @param number radian
-/// @return 
+/// @return length
 float Sinf(float number);
 /// @brief 
 /// @param number radian
@@ -19,26 +19,26 @@ float Sinf(float number);
 float Cosf(float number);
 /// @brief 
 /// @param number radian
-/// @return 
+/// @return length
 float Tanf(float number);
 /// @brief 
 /// @param number radian
-/// @return 
+/// @return length
 float Cotf(float number);
 /// @brief 
-/// @param number sinus
-/// @return 
+/// @param number length
+/// @return length
 float Asinf(float number);
 /// @brief 
-/// @param number cosinus
+/// @param number length
 /// @return radian
 float Acosf(float number);
 /// @brief 
-/// @param number sin/cos
+/// @param number length
 /// @return radian
 float Atanf(float number);
 /// @brief 
-/// @param number cos/sin
+/// @param number length
 /// @return radian
 float Acotf(float number);
 float Sqrtf(float number);
