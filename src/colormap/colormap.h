@@ -35,9 +35,9 @@ void ColorMapSetPixel(const ColorMap* colorMap, const Point2D position, const re
 
 void ColorMapSetPixelA(const register ColorMap* colorMap, const register int x, const register int y, const register Color color);
 
-Color ColorMapGetPixel(const ColorMap* colorMap, const Point2D position);
+int ColorMapGetPixel(const ColorMap* colorMap, const Point2D position, Color* colorOut);
 
-Color ColorMapGetPixelA(const ColorMap* colorMap, const int x, const int y);
+int ColorMapGetPixelA(const ColorMap* colorMap, const int x, const int y, Color* colorOut);
 
 /// @brief Draws direct line on color map from start point to end point with selected color
 /// @param colorMap The pointer of color map
@@ -49,11 +49,6 @@ void ColorMapDrawLine(const ColorMap* colorMap, Point2D start, Point2D end, cons
 void ColorMapDrawLineA(const ColorMap* colorMap, int startX, int startY, int endX, int endY, const Color color);
 
 void ColorMapFill(const ColorMap* colorMap, const Point2D position, const Color color);
-
-/// @brief Saves as a bitmap(.bmp) file on selected location (name of file contains name, example: "./test.bmp")
-/// @param colorMap The pointer of color map
-/// @param location Location of file
-void ColorMapSave(const ColorMap* colorMap, const char* location);
 
 void ColorMapClear(const ColorMap* colorMap);
 

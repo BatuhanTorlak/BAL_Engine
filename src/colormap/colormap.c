@@ -1,8 +1,13 @@
 #include "colormap.h"
-#include "../math/math.h"
 #include <malloc.h>
-#include <memory.h>
+#include <math.h>
+#include "../math/point.h"
 #include <stdio.h>
+
+int RoundInt(float number)
+{
+    return (int)(number + .5f);
+}
 
 ColorMap* ColorMapCreate(const int width, const int height)
 {
@@ -40,11 +45,16 @@ void ColorMapResize(ColorMap* colorMap, const int newWidth, const int newHeight)
         _nH = colorMap->height;
     int newLinearSize = newWidth * newHeight;
     Color* _clr = malloc(newLinearSize * sizeof(Color));
+    Color __color = {0};
+    Color* __colorPtr = &__color;
     for (int y = 0; y < _nH; y++)
     {
         for (int x = 0; x < _nW; x++)
         {
-            _clr[y * newWidth + x] = ColorMapGetPixelA(colorMap, x, y);
+            if (ColorMapGetPixelA(colorMap, x, y, __colorPtr))
+            {
+                _clr[y * newWidth + x] = __color;
+            }
         }
     }
     Color* __ = colorMap->colors;
@@ -58,28 +68,42 @@ void ColorMapResize(ColorMap* colorMap, const int newWidth, const int newHeight)
 
 void ColorMapSetPixel(const register ColorMap* colorMap, const register Point2D position, const register Color color)
 {
-    if ((position.x | position.y) >= 0 && position.x < colorMap->width && position.y < colorMap->height)
+    if (colorMap == 0)
+        return;
+    if ((position.x | position.y) >= 0 && position.y * colorMap->width + position.x < colorMap->linearSize)
         ColorMapPixel(colorMap, position.x, position.y) = color;
 }
 
 void ColorMapSetPixelA(const register ColorMap* colorMap, const register int x, const register int y, const register Color color)
 {
-    if ((x | y) >= 0 && x < colorMap->width && y < colorMap->height)
+    if (colorMap == 0)
+        return;
+    if ((x | y) >= 0 && y * colorMap->width + x < colorMap->linearSize)
         ColorMapPixel(colorMap, x, y) = color;
 }
 
-Color ColorMapGetPixel(const ColorMap* colorMap, const Point2D position)
+int ColorMapGetPixel(const ColorMap* colorMap, const Point2D position, Color* colorOut)
 {
-    if ((position.x | position.y) >= 0 && position.x < colorMap->width && position.y < colorMap->height)
-        return ColorMapPixel(colorMap, position.x, position.y);
-    return ColorCreate(255, 255, 255);
+    if (colorMap == 0)
+        return 0;
+    if ((position.x | position.y) >= 0 && position.y * colorMap->width + position.x < colorMap->linearSize)
+    { 
+        *colorOut = ColorMapPixel(colorMap, position.x, position.y);
+        return 1;
+    }
+    return 0;
 }
 
-Color ColorMapGetPixelA(const ColorMap* colorMap, const int x, const int y)
+int ColorMapGetPixelA(const ColorMap* colorMap, const int x, const int y, Color* colorOut)
 {
-    if ((x | y) >= 0 && x < colorMap->width && y < colorMap->height)
-        return ColorMapPixel(colorMap, x, y);
-    return ColorCreate(255, 255, 255);
+    if (colorMap == 0)
+        return 0;
+    if ((x | y) >= 0 && y * colorMap->width + x < colorMap->linearSize)
+    { 
+        *colorOut = ColorMapPixel(colorMap, x, y);
+        return 1;
+    }
+    return 0;
 }
 
 void ColorMapDrawLine(const ColorMap* colorMap, Point2D start, Point2D end, const Color color)
@@ -90,7 +114,7 @@ void ColorMapDrawLine(const ColorMap* colorMap, Point2D start, Point2D end, cons
     const int _h = colorMap->height;
     int sX;
     int eX;
-    const char _check = AbsInt(_b) > AbsInt(_a);
+    const char _check = abs(_b) > abs(_a);
     if (_check)
     {
         register int _s = start.x;
@@ -127,56 +151,6 @@ void ColorMapDrawLine(const ColorMap* colorMap, Point2D start, Point2D end, cons
     {
         ColorMapSetPixelA(colorMap, sX, RoundInt(sX * n + m), color);
     }
-}
-
-void ColorMapSave(const ColorMap* colorMap, const char* location)
-{
-    FILE* _f;
-    
-    int _size = colorMap->linearSize * 13 + 20;
-    int _nSize = 0;
-    int _s = 0;
-    
-    char* _txt = malloc(_size);
-    char* _txtA = _txt;
-    char _nTxt[100];
-    
-    Color color;
-    
-    sprintf(_nTxt, "P3 %i %i 255\n\0", colorMap->width, colorMap->height);
-        
-    for (; _nTxt[_s]; _s++)
-    {
-    }
-        
-    sprintf(_txtA, "%s", _nTxt);
-    _txtA += _s;
-    _nSize += _s;
-
-    for (int x = 0; x < colorMap->linearSize; x++)
-    {
-        
-        color = ColorMapPixelA(colorMap, x);
-        
-        sprintf(_nTxt, "%i %i %i\n\0", color.r, color.g, color.b);
-        
-        for (_s = 0; _nTxt[_s]; _s++)
-        {
-        }
-        
-        sprintf(_txtA, "%s", _nTxt);
-        _txtA += _s;
-        _nSize += _s;
-    }
-    _txtA[1] = '\0';
-
-    _f = fopen(location, "w");
-    
-    fwrite(_txt, 1, _nSize, _f);
-    
-    fclose(_f);
-    
-    free(_txt);
 }
 
 void ColorMapClear(const ColorMap* colorMap)

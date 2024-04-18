@@ -1,8 +1,7 @@
 #include "wui.h"
 #include <malloc.h>
-#include <stdio.h>
-#include <string.h>
-#include "../../math/math.h"
+#include <math.h>
+#include "../../math/point.h"
 
 typedef struct __params_t
 {
@@ -200,12 +199,12 @@ WinWindow* WinWindowCreate(const wchar_t* className, const wchar_t* windowName, 
 
 void WinWindowSetPixel(const WinWindow* win, const Point2D position, const Color color)
 {
-    ColorMapPixel(win->colorMap, position.x, position.y) = color;
+    ColorMapSetPixel(win->colorMap, position, color);
 }
 
 void WinWindowSetPixelA(const WinWindow* win, const int xPos, const int yPos, const Color color)
 {
-    ColorMapPixel(win->colorMap, xPos, yPos) = color;
+    ColorMapSetPixelA(win->colorMap, xPos, yPos, color);
 }
 
 void WinWindowDrawLine(const WinWindow* win, Point2D start, Point2D end, const Color color)
@@ -231,9 +230,6 @@ char WinWindowUpdate(const WinWindow* win, const int FPS)
 {
     if (((int long long)win | (int long long)win->isAlive) == 0)
         return 0;
-    //const int _ = 1000 / FPS;
-    //int _t = GetTickCount();
-    // printf("tickCount: %i\n", _t);
     WindowEvents* events = win->events;
     if (events)
     {
@@ -241,9 +237,7 @@ char WinWindowUpdate(const WinWindow* win, const int FPS)
             events->update(win);
     }
     WinWindowRender(win);
-    //int _delta = _ - (GetTickCount() - _t);
-    //if (_delta > 0)
-    //    Sleep(_ - (GetTickCount() - _t));
+    Sleep(1000 / FPS);
     return win->isAlive;
 }
 
