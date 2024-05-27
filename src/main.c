@@ -1,7 +1,13 @@
 #define OP_WIN
 #include "ui/ui.h"
+#include "math/vector2.h"
 #include <stdio.h>
 #include <math.h>
+
+typedef struct Body_t
+{
+    float mass;
+} Body;
 
 void TestUpdate(const WinWindow* win)
 {

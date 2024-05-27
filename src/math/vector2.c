@@ -1,5 +1,5 @@
-#include "math/vector2.h"
-#include "math/math.h"
+#include "vector2.h"
+#include <math.h>
 
 /// @brief Distance between start to end in two dimension
 /// @param start Start point
