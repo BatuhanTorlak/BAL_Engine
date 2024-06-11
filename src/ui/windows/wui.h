@@ -5,6 +5,7 @@
 #include "../../colormap/color.h"
 #include "../../colormap/colormap.h"
 #include "../events.h"
+#include "../component.h"
 
 typedef struct WinWindow_t
 {
@@ -14,7 +15,7 @@ typedef struct WinWindow_t
     HDC drawingContentHandler;
     PColorMap colorMap;
     WindowEvents* events;
-    struct drawing_t
+    struct Drawing_t
     {
         Color* bitmapColors;
         HBITMAP bitmap;
@@ -23,6 +24,12 @@ typedef struct WinWindow_t
     int width;
     int height;
     char isAlive;
+    struct ComponentManager_t
+    {
+        Component** components;
+        int componentsCount;
+        int componentsCapacity;
+    } componentManager;
 }WinWindow, *PWinWindow;
 
 WinWindow* WinWindowCreate(const wchar_t* className, const wchar_t* windowName, int width, int height);

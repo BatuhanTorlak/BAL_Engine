@@ -1,16 +1,18 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 #include "../colormap/colormap.h"
-
-typedef struct ComponentEvents_t
-{
-} ComponentEvents;
+#include "events.h"
+#ifdef OP_WIN
+#include "windows/wui.h"
+#else
+#include "linux/lui.h"
+#endif
 
 /*
 Kendime not. Kullanım:
 typedef struct ComponentAdi_t
 {
-    Component comp;
+    Component comp; // <--- En başta bu ifade olmalı(değişken adı önemli değil)
     // Buraya da kendi özelliklerini ekle
 } ComponentAdi;
 

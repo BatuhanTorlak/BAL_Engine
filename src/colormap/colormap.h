@@ -31,9 +31,9 @@ void ColorMapDestroy(const ColorMap* colorMap);
 
 void ColorMapResize(ColorMap* colorMap, const int newWidth, const int newHeight);
 
-void ColorMapSetPixel(const ColorMap* colorMap, const Point2D position, const register Color color);
+int ColorMapSetPixel(const ColorMap* colorMap, const Point2D position, const register Color color);
 
-void ColorMapSetPixelA(const register ColorMap* colorMap, const register int x, const register int y, const register Color color);
+int ColorMapSetPixelA(const register ColorMap* colorMap, const register int x, const register int y, const register Color color);
 
 int ColorMapGetPixel(const ColorMap* colorMap, const Point2D position, Color* colorOut);
 

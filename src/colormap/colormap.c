@@ -66,20 +66,28 @@ void ColorMapResize(ColorMap* colorMap, const int newWidth, const int newHeight)
     free(__);
 }
 
-void ColorMapSetPixel(const register ColorMap* colorMap, const register Point2D position, const register Color color)
+int ColorMapSetPixel(const register ColorMap* colorMap, const register Point2D position, const register Color color)
 {
     if (colorMap == 0)
-        return;
-    if ((position.x | position.y) >= 0 && position.y * colorMap->width + position.x < colorMap->linearSize)
+        return 0;
+    if ((position.x | position.y) >= 0 && position.y < colorMap->height && position.x < colorMap->width)
+    {
         ColorMapPixel(colorMap, position.x, position.y) = color;
+        return 1;
+    }
+    return 0;
 }
 
-void ColorMapSetPixelA(const register ColorMap* colorMap, const register int x, const register int y, const register Color color)
+int ColorMapSetPixelA(const register ColorMap* colorMap, const register int x, const register int y, const register Color color)
 {
     if (colorMap == 0)
-        return;
-    if ((x | y) >= 0 && y * colorMap->width + x < colorMap->linearSize)
+        return 0;
+    if ((x | y) >= 0 && y < colorMap->height && x < colorMap->width)
+    {
         ColorMapPixel(colorMap, x, y) = color;
+        return 1;
+    }
+    return 0;
 }
 
 int ColorMapGetPixel(const ColorMap* colorMap, const Point2D position, Color* colorOut)
@@ -153,13 +161,18 @@ void ColorMapDrawLine(const ColorMap* colorMap, Point2D start, Point2D end, cons
     }
 }
 
+void ColorMapDrawLineA(const ColorMap* colorMap, int startX, int startY, int endX, int endY, const Color color)
+{
+    ColorMapDrawLine(colorMap, Point2DCreate(startX, startY), Point2DCreate(endX, endY), color);
+}
+
 void ColorMapClear(const ColorMap* colorMap)
 {
     for (int x = 0; x < colorMap->width; x++)
     {
         for (int y = 0; y < colorMap->height; y++)
         {
-            ColorMapPixel(colorMap, x, y) = ColorCreate(255, 255, 255);
+            ColorMapSetPixelA(colorMap, x, y, ColorCreate(255, 255, 255));
         }
     }
 }

@@ -105,6 +105,36 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
             DeleteDC(_oldDC);
         }
         break;
+    case WM_LBUTTONDOWN:
+        int _xPos = LOWORD(c);
+        int _yPos = HIWORD(c);
+        _yPos = currentWindow->height - _yPos;
+        Component** _comps = currentWindow->componentManager.components;
+        int _size = currentWindow->componentManager.componentsCount;
+        for (int x = 0; x < _size; x++)
+        {
+            Component* _com = _comps[x];
+            Point2D _pos = _com->position;
+            Point2D _siz = _com->size;
+            register int _posCache = _pos.x;
+            if (_posCache > _xPos)
+                continue;
+            _posCache += _siz.x;
+            if (_posCache < _xPos)
+                continue;
+            _posCache = _pos.y;
+            if (_com->position.y > _yPos)
+                continue;
+            _posCache += _siz.y;
+            if (_com->position.y + _com->size.y < _yPos)
+                continue;
+            _com->events->OnClick(_xPos, _yPos);
+        }
+        if (currentWindow->events->OnClick)
+            currentWindow->events->OnClick(currentWindow, _xPos, _yPos);
+        break;
+    case WM_KEYDOWN:
+
     case WM_SIZE:
         UINT width = LOWORD(c);
         UINT height = HIWORD(c);
@@ -187,6 +217,9 @@ WinWindow* WinWindowCreate(const wchar_t* className, const wchar_t* windowName, 
         .win = _,
         .started = 1
     };
+    _->componentManager.componentsCapacity = 6;
+    _->componentManager.componentsCount = 0;
+    _->componentManager.components = malloc(sizeof(Component**) * 6);
     _->threadHandler = CreateThread(0, 3000, (DWORD(*)(LPVOID))WinWindowManagement, _param, 0, 0);
     while (_param->started)
     {
@@ -212,9 +245,18 @@ void WinWindowDrawLine(const WinWindow* win, Point2D start, Point2D end, const C
     ColorMapDrawLine(win->colorMap, start, end, color);
 }
 
+void WinWindowDrawLineA(const WinWindow* win, int x1, int y1, int x2, int y2, const Color color)
+{
+    ColorMapDrawLineA(win->colorMap, x1, y1, x2, y2, color);
+}
+
 void WinWindowSetEvents(WinWindow* win, WindowEvents* newEvents)
 {
     win->events = newEvents;
+}
+
+void WinWindowAddEvents(WinWindow* win, Component* component)
+{
 }
 
 void WinWindowRender(const WinWindow* win)
@@ -233,8 +275,8 @@ char WinWindowUpdate(const WinWindow* win, const int FPS)
     WindowEvents* events = win->events;
     if (events)
     {
-        if (events->update)
-            events->update(win);
+        if (events->Update)
+            events->Update(win);
     }
     WinWindowRender(win);
     Sleep(1000 / FPS);

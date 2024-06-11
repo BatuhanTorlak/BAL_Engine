@@ -10,6 +10,7 @@
 #include "../math/point.h"
 #include "../colormap/color.h"
 #include "../colormap/colormap.h"
+#include "component.h"
 #include "events.h"
 #include "key_id.h"
 
