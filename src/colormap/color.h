@@ -1,15 +1,14 @@
 #ifndef COLOR_H
 #define COLOR_H
-#define ColorCreate(r, g, b) (Color){(unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)255}
-#define ColorCreateA(r, g, b, a) (Color){(unsigned char)r, (unsigned char)g, (unsigned char)b, (unsigned char)a}
+#define ColorCreate(red, green, blue) (Color){.r = (unsigned char)red, .g = (unsigned char)green, .b = (unsigned char)blue, .reserved = (unsigned char)0}
 
-/// @brief RGBA 32 bit color
+/// @brief RGB 32 bit color
 typedef struct Color_t
 {
-    unsigned char r;
-    unsigned char g;
     unsigned char b;
-    unsigned char a;
+    unsigned char g;
+    unsigned char r;
+    unsigned char reserved;
 }Color;
 
 #endif // COLOR_H

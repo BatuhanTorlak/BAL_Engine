@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "wui.h": "c",
+        "point.h": "c"
+    }
+}

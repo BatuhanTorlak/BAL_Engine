@@ -1,5 +1,5 @@
-#include "math/vector3.h"
-#include "math/math.h"
+#include "vector3.h"
+#include <math.h>
 
 /// @brief Distance between start to end in three dimension
 /// @param start Start point
