@@ -11,6 +11,7 @@ else
 endif
 
 FILES+=src/ui/events.c 
+FILES+=src/ui/ui.c
 FILES+=src/colormap/colormap.c
 
 clean:
@@ -35,5 +36,5 @@ else
 endif
 
 
-all: run compile
+all: compile run
 	

@@ -1,6 +1,7 @@
 #define OP_WIN
 #include "ui/ui.h"
 #include "math/vector2.h"
+#include "ui/key_id.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -10,6 +11,8 @@ void TestUpdate(const WinWindow* win)
 
 int _x = -1;
 int _y = -1;
+
+Point2D _posGoin = {0};
 
 void TestOnClick(const WinWindow* win, int xPos, int yPos)
 {
@@ -24,24 +27,43 @@ void TestOnClick(const WinWindow* win, int xPos, int yPos)
     _y = yPos;
 }
 
+void TestOnKeyDown(const WinWindow* win, int charac)
+{
+    if (charac == KEY_LSHIFT)
+    {
+        printf("Left shift!\n");
+        WinWindowSetPosition(win, _posGoin);
+        _posGoin.x += 10;
+        _posGoin.y += 10;
+        if (_posGoin.x == 400)
+        {
+            _posGoin.x = 10;
+        }
+        
+        return;
+    }
+    printf("%c\n", charac);
+}
+
 int main()
 {
-    WinWindow* win = WinWindowCreate(L"test", L"test", 623, 280);
+    Window* win = WindowCreateA(L"test");
 
-    PWinWindow* window = &win;
+    PWindow* window = &win;
     
     WindowEvents* events = WindowEventsCreate();
     events->Update = TestUpdate;
     events->OnClick = TestOnClick;
-    WinWindowSetEvents(win, events);
+    events->OnKeyDown = TestOnKeyDown;
+    WindowSetEvents(win, events);
     
-    WinWindowDrawLine(win, Point2DCreate(10, 10), Point2DCreate(100, 100), ColorCreate(255, 0, 255));
+    WindowDrawLine(win, Point2DCreate(10, 10), Point2DCreate(100, 100), ColorCreate(255, 0, 255));
 
-    while (WinWindowUpdate(win, 120))
+    while (WindowUpdate(win, 120))
     {
     }
 
-    WinWindowDestroy(window);
+    WindowDestroy(window);
     WindowEventsDestroy(events);
 
     return EXIT_SUCCESS;
