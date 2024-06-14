@@ -10,15 +10,15 @@ else
 	FILES +=" src/ui/linux/lui.h"
 endif
 
-FILES+=src/ui/events.c 
+FILES+=src/ui/events.c
 FILES+=src/ui/ui.c
 FILES+=src/colormap/colormap.c
 
 clean:
 ifeq ($(OS), Windows_NT)
-	rm /build/Win/BALE.exe
+	rm ./build/Win/BALE.exe
 else
-	rm /build/Lin/BALE.o
+	rm ./build/Lin/BALE.o
 endif
 
 compile:

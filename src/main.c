@@ -2,7 +2,6 @@
 #include "ui/ui.h"
 #include "math/vector2.h"
 #include "ui/key_id.h"
-#include <stdio.h>
 #include <math.h>
 
 void TestUpdate(const WinWindow* win)
@@ -12,7 +11,7 @@ void TestUpdate(const WinWindow* win)
 int _x = -1;
 int _y = -1;
 
-Point2D _posGoin = {0};
+Point2D _posGoin = {100, 100};
 
 void TestOnClick(const WinWindow* win, int xPos, int yPos)
 {
@@ -31,15 +30,9 @@ void TestOnKeyDown(const WinWindow* win, int charac)
 {
     if (charac == KEY_LSHIFT)
     {
-        printf("Left shift!\n");
-        WinWindowSetPosition(win, _posGoin);
+        WinWindowSetSize(win, _posGoin);
         _posGoin.x += 10;
         _posGoin.y += 10;
-        if (_posGoin.x == 400)
-        {
-            _posGoin.x = 10;
-        }
-        
         return;
     }
     printf("%c\n", charac);

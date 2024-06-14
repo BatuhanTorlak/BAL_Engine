@@ -1,5 +1,4 @@
 #include "wui.h"
-#include <stdio.h>
 #include <malloc.h>
 #include <math.h>
 #include "../../math/point.h"
@@ -29,8 +28,6 @@ typedef struct WindowList_t
 LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c);
 DWORD WinWindowManagement(__paramsPtr param);
 
-//WindowList* allWindows = 0;
-
 LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
 {
     if (msg == WM_CREATE)
@@ -56,6 +53,9 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
         currentWindow->width = (int)_sizeRect.top;
         currentWindow->height = (int)_sizeRect.left;
         break;
+    case WM_SIZE:
+        currentWindow->width = LOWORD(c);
+        currentWindow->height = HIWORD(c);
     case WM_EXITSIZEMOVE:
         // I don't even know what I have done here but it works
         if (b == SC_MOVE)
@@ -104,7 +104,14 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
 
             SelectObject(_dc, _newBitmap);
 
-            BitBlt(_dc, 0, 0, _nW, _nH, _oldDC, 0, 0, SRCCOPY);
+            int _o = BitBlt(_dc, 0, 0, _nW, _nH, _oldDC, 0, 0, SRCCOPY);
+
+            if (_o == 0)
+            {
+                DeleteDC(_dc);
+                DeleteObject(_newBitmap);
+                break;
+            }
 
             _clp->width = _width;
             _clp->height = _height;
@@ -116,8 +123,10 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
             currentWindow->drawing.bitmap = _newBitmap;
             currentWindow->drawing.bitmapDrawingContentHandler = _dc;
 
-            DeleteObject(_oldBitmap);
             DeleteDC(_oldDC);
+            DeleteObject(_oldBitmap);
+            // CloseHandle(_oldBitmap);
+            // CloseHandle(_oldDC);
 
             // Window event
             if (currentWindow->events && currentWindow->events->OnSizeChanged)
@@ -136,6 +145,8 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
     case WM_LBUTTONDOWN:
         int _xPos = LOWORD(c);
         int _yPos = HIWORD(c);
+
+        _yPos = currentWindow->position.y + currentWindow->height - _yPos;
         
         // Window event
         if (currentWindow->events && currentWindow->events->OnClick)
@@ -403,13 +414,18 @@ void WinWindowDestroy(const WinWindow** win)
     *win = 0;
 
     TerminateThread(_win->threadHandler, 0);
+    CloseHandle(_win->threadHandler);
 
     ReleaseDC(_win->windowHandler, _win->drawingContentHandler);
     DeleteDC(_win->drawing.bitmapDrawingContentHandler);
+    CloseHandle(_win->drawingContentHandler);
+    CloseHandle(_win->drawing.bitmapDrawingContentHandler);
 
     DeleteObject(_win->drawing.bitmap);
+    CloseHandle(_win->drawing.bitmapColors);
 
     DestroyWindow(_win->windowHandler);
+    CloseHandle(_win->windowHandler);
 
     UnregisterClassW(_win->windowClass.lpszClassName, 0);
 
