@@ -13,7 +13,9 @@ typedef struct ComponentAdi_t
 
 ComponentAdi* component = ComponentCreate(sizeof(ComponentAdi), image, Point2DCreate(10, 10), Point2DCreate(200, 140));
 ComponentDestroy(component);
+
 */
+
 typedef struct Component_t
 {
     ComponentEvents* events;

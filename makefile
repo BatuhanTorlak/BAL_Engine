@@ -1,40 +1,14 @@
 CC=gcc
 
-WIN_FLAGS = -lgdi32
-LIN_FLAGS = -libX11
+CFLAGS=-w -O3
 
+GLOBAL_FILES=src/colormap/color.c src/colormap/colormap.c src/math/point.c src/math/vector2.c src/math/vector3.c src/ui/events.c src/ui/component.c
+WIN_FILES=src/ui/windows/wui.c src/thread/windows/W_thread.c
+LIN_FILES=src/ui/linux/lui.c src/thread/linux/L_thread.c
 
-ifeq ($(OS), Windows_NT)
-	FILES +=src/ui/windows/wui.c
-else
-	FILES +=" src/ui/linux/lui.h"
-endif
+compilewin:
+	$(CC) -c $(GLOBAL_FILES) $(WIN_FILES) $(CFLAGS)
+	ar rcs build/Win/libwbale.a *.o
+	rm *.o
 
-FILES+=src/ui/events.c
-FILES+=src/ui/ui.c
-FILES+=src/colormap/colormap.c
-
-clean:
-ifeq ($(OS), Windows_NT)
-	rm ./build/Win/BALE.exe
-else
-	rm ./build/Lin/BALE.o
-endif
-
-compile:
-ifeq ($(OS), Windows_NT)
-	$(CC) $(FILES) $(CustomFiles) -w $(WIN_FLAGS) -O3 -o ./build/Win/BALE.exe
-else
-	$(CC) $(FILES) $(CustomFiles) -w $(LIN_FLAGS) -O3 -o /build/Lin/BALE.o
-endif
-
-run:
-ifeq ($(OS), Windows_NT)
-	start "./build/Win/BALE.exe"
-else
-	./build/Lin/BALE.o
-endif
-
-
-all: compile run
-	
+compilelin:

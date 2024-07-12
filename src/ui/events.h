@@ -10,7 +10,7 @@ typedef struct WindowEvents_t
     void(*OnMoving)(const void* win, int xPos, int yPos);
     void(*OnMoved)(const void* win, int xPos, int yPos);
     //void(*playerUpdate)(float deltaTime);
-}WindowEvents, PWindowEvents;
+} *WindowEvents, **PWindowEvents;
 
 typedef struct ComponentEvents_t
 {
@@ -19,7 +19,7 @@ typedef struct ComponentEvents_t
     void(*OnSizeChanged)(const void* win, const void* component, int xSize, int ySize);
 } ComponentEvents;
 
-WindowEvents* WindowEventsCreate();
-void WindowEventsDestroy(WindowEvents* events);
+WindowEvents WindowEventsCreate();
+void WindowEventsDestroy(WindowEvents events);
 
 #endif

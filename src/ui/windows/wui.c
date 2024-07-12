@@ -1,7 +1,14 @@
+#define BAL_DEFAULT_WIDTH 500
+#define BAL_DEFAULT_HEIGHT 200
+#define BAL_DEFAULT_STARTPOS_X 50
+#define BAL_DEFAULT_STARTPOS_Y 50
+#define BAL_DEFAULT_NAME L"Test"
 #include "wui.h"
 #include <malloc.h>
 #include <math.h>
-#include "../../math/point.h"
+#include <stdio.h>
+
+#define BAL_DEFAULT_CLEAR_COLOR ColorCreate(0, 0, 0)
 
 typedef struct __params_t
 {
@@ -19,12 +26,7 @@ typedef struct ColorCOLORREF_u
     COLORREF winColor;
 } ColorCOLORREF;
 
-typedef struct WindowList_t
-{
-    struct WindowList_t* previous;
-    WinWindow* win;
-} WindowList;
-
+WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, int yPos, int width, int height);
 LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c);
 DWORD WinWindowManagement(__paramsPtr param);
 
@@ -34,7 +36,7 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
     {
         CREATESTRUCTW* _crstruct = c;
         __paramsPtr _params = _crstruct->lpCreateParams;
-        PWinWindow _win = _params->win;
+        WinWindow* _win = _params->win;
         SetWindowLongPtrA(hWnd, GWLP_USERDATA, _win);
     }
 
@@ -48,11 +50,11 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
     case WM_CLOSE:
         currentWindow->isAlive = 0;
         break;
-    case WM_SIZING:
+    /*case WM_SIZING:
         RECT _sizeRect = *((RECT*)c);
         currentWindow->width = (int)_sizeRect.top;
         currentWindow->height = (int)_sizeRect.left;
-        break;
+        break;*/
     case WM_SIZE:
         currentWindow->width = LOWORD(c);
         currentWindow->height = HIWORD(c);
@@ -146,7 +148,7 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
         int _xPos = LOWORD(c);
         int _yPos = HIWORD(c);
 
-        _yPos = currentWindow->position.y + currentWindow->height - _yPos;
+        _yPos = currentWindow->height - _yPos;
         
         // Window event
         if (currentWindow->events && currentWindow->events->OnClick)
@@ -170,10 +172,10 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
             if (_posCache < _xPos)
                 continue;
             _posCache = _pos.y;
-            if (_com->position.y > _yPos)
+            if (_posCache > _yPos)
                 continue;
             _posCache += _siz.y;
-            if (_com->position.y + _com->size.y < _yPos)
+            if (_posCache < _yPos)
                 continue;
             _com->events->OnClick(currentWindow, _com, _xPos, _yPos);
         }
@@ -260,14 +262,14 @@ DWORD WinWindowManagement(__paramsPtr param)
     }
 }
 
-WinWindow* WinWindowCreate(const wchar_t* className, const wchar_t* windowName, int width, int height)
+WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, int yPos, int width, int height)
 {
     WinWindow* _ = malloc(sizeof(WinWindow));
     __paramsPtr _param = malloc(sizeof(__params));
-    *_ = (WinWindow){0};
+    ZeroMemory(_, sizeof(WinWindow));
     *_param = (__params){
-        .className = className,
-        .windowName = windowName,
+        .className = name,
+        .windowName = name,
         .width = width,
         .height = height,
         .win = _,
@@ -283,55 +285,94 @@ WinWindow* WinWindowCreate(const wchar_t* className, const wchar_t* windowName, 
     }
     free(_param);
 
+    MoveWindow(_->windowHandler, xPos, yPos, width, height, FALSE);
+
     return _;
 }
 
-void WinWindowSetPixel(const WinWindow* win, const Point2D position, const Color color)
+WinWindow* WindowCreate()
+{
+    return WindowCreateA(BAL_DEFAULT_NAME);
+}
+
+WinWindow* WindowCreateA(const short* name)
+{
+    return WinWindowCreate(name, name, BAL_DEFAULT_STARTPOS_X, BAL_DEFAULT_STARTPOS_Y, BAL_DEFAULT_WIDTH, BAL_DEFAULT_WIDTH);
+}
+
+WinWindow* WindowCreateB(const short* name, int xPos, int yPos, int width, int height)
+{
+    return WinWindowCreate(name, name, xPos, yPos, width, height);
+}
+
+void WindowSetPixel(const WinWindow* win, Point2D position, Color color)
 {
     ColorMapSetPixel(win->colorMap, position, color);
 }
 
-void WinWindowSetPixelA(const WinWindow* win, const int xPos, const int yPos, const Color color)
+void WindowSetPixelA(const WinWindow* win, int xPos, int yPos, Color color)
 {
     ColorMapSetPixelA(win->colorMap, xPos, yPos, color);
 }
 
-void WinWindowDrawLine(const WinWindow* win, Point2D start, Point2D end, const Color color)
+void WindowDrawLine(const WinWindow* win, Point2D start, Point2D end, Color color)
 {
     ColorMapDrawLine(win->colorMap, start, end, color);
 }
 
-void WinWindowDrawLineA(const WinWindow* win, int x1, int y1, int x2, int y2, const Color color)
+void WindowDrawLineA(const WinWindow* win, int x1, int y1, int x2, int y2, Color color)
 {
     ColorMapDrawLineA(win->colorMap, x1, y1, x2, y2, color);
 }
 
-void WinWindowSetPosition(const WinWindow* win, Point2D pos)
+void WindowClear(const WinWindow* window)
+{
+    for (int x = 0; x < window->width; x++)
+    {
+        for (int y = 0; y < window->height; y++)
+        {
+            WindowSetPixelA(window, x, y, BAL_DEFAULT_CLEAR_COLOR);
+        }
+    }
+}
+
+void WindowClearA(const WinWindow* window, Color color)
+{
+    for (int x = 0; x < window->width; x++)
+    {
+        for (int y = 0; y < window->height; y++)
+        {
+            WindowSetPixelA(window, x, y, color);
+        }
+    }
+}
+
+void WindowSetPosition(const WinWindow* win, Point2D pos)
 {
     MoveWindow(win->windowHandler, pos.x, pos.y, win->width, win->height, FALSE);
 }
 
-void WinWindowSetPositionA(const WinWindow* win, int xPos, int yPos)
+void WindowSetPositionA(const WinWindow* win, int xPos, int yPos)
 {
     MoveWindow(win->windowHandler, xPos, yPos, win->width, win->height, FALSE);
 }
 
-void WinWindowSetSize(const WinWindow* win, Point2D size)
+void WindowSetSize(const WinWindow* win, Point2D size)
 {    
     MoveWindow(win->windowHandler, win->position.x, win->position.y, size.x, size.y, FALSE);
 }
 
-void WinWindowSetSizeA(const WinWindow* win, int xSize, int ySize)
+void WindowSetSizeA(const WinWindow* win, int xSize, int ySize)
 {
     MoveWindow(win->windowHandler, win->position.x, win->position.y, xSize, ySize, FALSE);
 }
 
-void WinWindowSetEvents(WinWindow* win, WindowEvents* newEvents)
+void WindowSetEvents(WinWindow* win, WindowEvents newEvents)
 {
     win->events = newEvents;
 }
 
-void WinWindowAddComponent(WinWindow* win, Component* component)
+void WindowAddComponent(WinWindow* win, Component* component)
 {
     WinWindow _win = *win;
     if (_win.componentManager.componentsCount == _win.componentManager.componentsCapacity)
@@ -347,7 +388,7 @@ void WinWindowAddComponent(WinWindow* win, Component* component)
     win->componentManager.componentsCount++;
 }
 
-void WinWindowRemoveComponent(WinWindow* win, Component* component)
+void WindowRemoveComponent(WinWindow* win, Component* component)
 {
     WinWindow _win = *win;
     if (_win.componentManager.componentsCount == _win.componentManager.componentsCapacity - 6)
@@ -382,7 +423,7 @@ void WinWindowRemoveComponent(WinWindow* win, Component* component)
     win->componentManager.componentsCount--;
 }
 
-void WinWindowRender(const WinWindow* win)
+void WindowRender(const WinWindow* win)
 {
     const restrict HDC _hdc = win->drawingContentHandler;
     const restrict PColorMap colorMap = win->colorMap;
@@ -391,22 +432,19 @@ void WinWindowRender(const WinWindow* win)
     BOOL _x = BitBlt(_hdc, 0, 0, colorMap->width, colorMap->height, bitmapDrawingContentHandler, 0, 0, SRCCOPY);
 }
 
-char WinWindowUpdate(const WinWindow* win, const int FPS)
+char WindowUpdate(const WinWindow* win, const int FPS)
 {
-    if (((int long long)win | (int long long)win->isAlive) == 0)
+    if ((int long long)win == 0 || (int long long)win->isAlive == 0)
         return 0;
-    WindowEvents* events = win->events;
-    if (events)
-    {
-        if (events->Update)
-            events->Update(win);
-    }
-    WinWindowRender(win);
+    WindowEvents events = win->events;
+    if (events && events->Update)
+        events->Update(win);
+    WindowRender(win);
     Sleep(1000 / FPS);
-    return win->isAlive;
+    return 1;
 }
 
-void WinWindowDestroy(const WinWindow** win)
+void WindowDestroy(const WinWindow** win)
 {
     if (*win == 0)
         return;
