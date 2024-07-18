@@ -3,10 +3,12 @@
 #define BAL_DEFAULT_STARTPOS_X 50
 #define BAL_DEFAULT_STARTPOS_Y 50
 #define BAL_DEFAULT_NAME L"Test"
+#define BAL_MALLOC(__size) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, __size)
+#define BAL_MALLOC_0(__size) HeapAlloc(GetProcessHeap(), 0, __size)
+#define BAL_FREE(__ptr) HeapFree(GetProcessHeap(), 0, __ptr)
 #include "wui.h"
 #include <malloc.h>
 #include <math.h>
-#include <stdio.h>
 
 #define BAL_DEFAULT_CLEAR_COLOR ColorCreate(0, 0, 0)
 
@@ -16,8 +18,8 @@ typedef struct __params_t
     const wchar_t* windowName;
     int width;
     int height;
-    char started;
     WinWindow* win;
+    HANDLE mainThread;
 } __params, *__paramsPtr;
 
 typedef struct ColorCOLORREF_u
@@ -41,7 +43,7 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
     }
 
     WinWindow* currentWindow = (WinWindow*)GetWindowLongPtrA(hWnd, GWLP_USERDATA);
-    if (currentWindow == 0)
+    if (currentWindow == 0 || currentWindow->isAlive == 0)
         return DefWindowProcW(hWnd, msg, b, c);
 
     switch (msg)
@@ -235,7 +237,7 @@ DWORD WinWindowManagement(__paramsPtr param)
     win->drawing.bitmap = CreateDIBSection(0, &_info, DIB_RGB_COLORS, &(win->drawing.bitmapColors), 0, 0);
     SelectObject(win->drawing.bitmapDrawingContentHandler, win->drawing.bitmap);
 
-    PColorMap colorMap = malloc(sizeof(ColorMap));
+    PColorMap colorMap = BAL_MALLOC(sizeof(ColorMap));
     *colorMap = (ColorMap){0};
     colorMap->width = param->width;
     colorMap->height = param->height;
@@ -249,7 +251,7 @@ DWORD WinWindowManagement(__paramsPtr param)
     win->events = 0;
     win->isAlive = 1;
 
-    param->started = 0;
+    ResumeThread(param->mainThread);
 
     ShowWindow(windowHandler, SW_SHOW);
 
@@ -264,8 +266,10 @@ DWORD WinWindowManagement(__paramsPtr param)
 
 WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, int yPos, int width, int height)
 {
-    WinWindow* _ = malloc(sizeof(WinWindow));
-    __paramsPtr _param = malloc(sizeof(__params));
+    HANDLE _threadHandle = GetCurrentThread();
+
+    WinWindow* _ = BAL_MALLOC(sizeof(WinWindow));
+    __paramsPtr _param = BAL_MALLOC(sizeof(__params));
     ZeroMemory(_, sizeof(WinWindow));
     *_param = (__params){
         .className = name,
@@ -273,17 +277,17 @@ WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, 
         .width = width,
         .height = height,
         .win = _,
-        .started = 1
+        .mainThread = _threadHandle
     };
+
     _->componentManager.componentsCapacity = 6;
     _->componentManager.componentsCount = 0;
-    _->componentManager.components = malloc(sizeof(Component**) * 6);
-    _->threadHandler = CreateThread(0, 3000, (DWORD(*)(LPVOID))WinWindowManagement, _param, 0, 0);
-    while (_param->started)
-    {
-        Sleep(1);
-    }
-    free(_param);
+    _->componentManager.components = BAL_MALLOC_0(sizeof(Component**) * 6);
+    _->threadHandler = CreateThread(0, 0, (DWORD(*)(LPVOID))WinWindowManagement, _param, 0, 0);
+
+    SuspendThread(_threadHandle);
+
+    CloseHandle(_threadHandle);
 
     MoveWindow(_->windowHandler, xPos, yPos, width, height, FALSE);
 
@@ -307,26 +311,32 @@ WinWindow* WindowCreateB(const short* name, int xPos, int yPos, int width, int h
 
 void WindowSetPixel(const WinWindow* win, Point2D position, Color color)
 {
-    ColorMapSetPixel(win->colorMap, position, color);
+    if (win == 0 && win->isAlive)
+        ColorMapSetPixel(win->colorMap, position, color);
 }
 
 void WindowSetPixelA(const WinWindow* win, int xPos, int yPos, Color color)
 {
-    ColorMapSetPixelA(win->colorMap, xPos, yPos, color);
+    if (win && win->isAlive)
+        ColorMapSetPixelA(win->colorMap, xPos, yPos, color);
 }
 
 void WindowDrawLine(const WinWindow* win, Point2D start, Point2D end, Color color)
 {
-    ColorMapDrawLine(win->colorMap, start, end, color);
+    if (win && win->isAlive)
+        ColorMapDrawLine(win->colorMap, start, end, color);
 }
 
 void WindowDrawLineA(const WinWindow* win, int x1, int y1, int x2, int y2, Color color)
 {
-    ColorMapDrawLineA(win->colorMap, x1, y1, x2, y2, color);
+    if (win && win->isAlive)
+        ColorMapDrawLineA(win->colorMap, x1, y1, x2, y2, color);
 }
 
 void WindowClear(const WinWindow* window)
 {
+    if (window == 0 || window->isAlive == 0)
+        return;
     for (int x = 0; x < window->width; x++)
     {
         for (int y = 0; y < window->height; y++)
@@ -338,6 +348,8 @@ void WindowClear(const WinWindow* window)
 
 void WindowClearA(const WinWindow* window, Color color)
 {
+    if (window == 0 || window->isAlive == 0)
+        return;
     for (int x = 0; x < window->width; x++)
     {
         for (int y = 0; y < window->height; y++)
@@ -349,39 +361,46 @@ void WindowClearA(const WinWindow* window, Color color)
 
 void WindowSetPosition(const WinWindow* win, Point2D pos)
 {
-    MoveWindow(win->windowHandler, pos.x, pos.y, win->width, win->height, FALSE);
+    if (win && win->isAlive)
+        MoveWindow(win->windowHandler, pos.x, pos.y, win->width, win->height, FALSE);
 }
 
 void WindowSetPositionA(const WinWindow* win, int xPos, int yPos)
 {
-    MoveWindow(win->windowHandler, xPos, yPos, win->width, win->height, FALSE);
+    if (win && win->isAlive)
+        MoveWindow(win->windowHandler, xPos, yPos, win->width, win->height, FALSE);
 }
 
 void WindowSetSize(const WinWindow* win, Point2D size)
-{    
-    MoveWindow(win->windowHandler, win->position.x, win->position.y, size.x, size.y, FALSE);
+{
+    if (win && win->isAlive)
+        MoveWindow(win->windowHandler, win->position.x, win->position.y, size.x, size.y, FALSE);
 }
 
 void WindowSetSizeA(const WinWindow* win, int xSize, int ySize)
 {
-    MoveWindow(win->windowHandler, win->position.x, win->position.y, xSize, ySize, FALSE);
+    if (win && win->isAlive)
+        MoveWindow(win->windowHandler, win->position.x, win->position.y, xSize, ySize, FALSE);
 }
 
 void WindowSetEvents(WinWindow* win, WindowEvents newEvents)
 {
-    win->events = newEvents;
+    if (win && win->isAlive && newEvents)
+        win->events = newEvents;
 }
 
 void WindowAddComponent(WinWindow* win, Component* component)
 {
+    if (win == 0 || win->isAlive == 0 || component == 0 || component->sOC == 0)
+        return;
     WinWindow _win = *win;
     if (_win.componentManager.componentsCount == _win.componentManager.componentsCapacity)
     {
         win->componentManager.componentsCapacity = _win.componentManager.componentsCount + 6;
-        Component** _comps = malloc(sizeof(Component*) * win->componentManager.componentsCapacity);
-        memcpy(_comps, _win.componentManager.components, sizeof(Component*) * _win.componentManager.componentsCount);
+        Component** _comps = BAL_MALLOC_0(sizeof(Component*) * win->componentManager.componentsCapacity);
+        MoveMemory(_comps, _win.componentManager.components, sizeof(Component*) * _win.componentManager.componentsCount);
         win->componentManager.components = _comps;
-        free(_win.componentManager.components);
+        BAL_FREE(_win.componentManager.components);
         _win.componentManager.components = win->componentManager.components;
     }
     _win.componentManager.components[_win.componentManager.componentsCount] = component;
@@ -390,22 +409,24 @@ void WindowAddComponent(WinWindow* win, Component* component)
 
 void WindowRemoveComponent(WinWindow* win, Component* component)
 {
+    if (win == 0 || win->isAlive == 0 || component == 0 || component->sOC == 0)
+        return;
     WinWindow _win = *win;
     if (_win.componentManager.componentsCount == _win.componentManager.componentsCapacity - 6)
     {
         win->componentManager.componentsCapacity = _win.componentManager.componentsCount - 6;
-        Component** _comps = malloc(sizeof(Component*) * win->componentManager.componentsCapacity);
+        Component** _comps = BAL_MALLOC_0(sizeof(Component*) * win->componentManager.componentsCapacity);
         int x;
         for (x = 0; x < _win.componentManager.componentsCount; x++)
         {
             if (_win.componentManager.components[x] == component)
                 break;
         }
-        memcpy(_comps, _win.componentManager.components, sizeof(Component*) * x);
+        MoveMemory(_comps, _win.componentManager.components, sizeof(Component*) * x);
         x++;
-        memcpy(_comps + x * sizeof(Component*), _win.componentManager.components + x * sizeof(Component*), sizeof(Component*) * (_win.componentManager.componentsCount - x - 1));
+        MoveMemory(_comps + x * sizeof(Component*), _win.componentManager.components + x * sizeof(Component*), sizeof(Component*) * (_win.componentManager.componentsCount - x - 1));
         win->componentManager.components = _comps;
-        free(_win.componentManager.components);
+        BAL_FREE(_win.componentManager.components);
         _win.componentManager.components = win->componentManager.components;
         win->componentManager.componentsCount--;
         return;
@@ -416,15 +437,18 @@ void WindowRemoveComponent(WinWindow* win, Component* component)
         if (_win.componentManager.components[x] == component)
             break;
     }
-    memcpy(win->componentManager.components, _win.componentManager.components, sizeof(Component*) * x);
+    MoveMemory(win->componentManager.components, _win.componentManager.components, sizeof(Component*) * x);
     x++;
-    memcpy(win->componentManager.components + x * sizeof(Component*), _win.componentManager.components + x * sizeof(Component*), sizeof(Component*) * (_win.componentManager.componentsCount - x - 1));
+    MoveMemory(win->componentManager.components + x * sizeof(Component*), _win.componentManager.components + x * sizeof(Component*), sizeof(Component*) * (_win.componentManager.componentsCount - x - 1));
  
     win->componentManager.componentsCount--;
 }
 
 void WindowRender(const WinWindow* win)
 {
+    if (win == 0 || win->isAlive == 0)
+        return;
+
     const restrict HDC _hdc = win->drawingContentHandler;
     const restrict PColorMap colorMap = win->colorMap;
     const restrict HDC bitmapDrawingContentHandler = win->drawing.bitmapDrawingContentHandler;
@@ -446,7 +470,7 @@ char WindowUpdate(const WinWindow* win, const int FPS)
 
 void WindowDestroy(const WinWindow** win)
 {
-    if (*win == 0)
+    if (win == 0 || *win == 0)
         return;
     WinWindow* _win = *win;
     *win = 0;
@@ -467,6 +491,6 @@ void WindowDestroy(const WinWindow** win)
 
     UnregisterClassW(_win->windowClass.lpszClassName, 0);
 
-    free(_win->colorMap);
-    free(_win);
+    BAL_FREE(_win->colorMap);
+    BAL_FREE(_win);
 }

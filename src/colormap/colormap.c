@@ -1,7 +1,7 @@
-#include "colormap.h"
+#include "../../BALE/colormap/colormap.h"
 #include <malloc.h>
 #include <math.h>
-#include "../math/point.h"
+#include "../../BALE/math/point.h"
 #include <stdio.h>
 
 int RoundInt(float number)

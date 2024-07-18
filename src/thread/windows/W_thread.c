@@ -25,6 +25,8 @@ typedef struct BalWaitParams_t
     int miliseconds;
 } BalWaitParams;
 
+WinThread* _processThread = 0;
+
 DWORD BalThreadStart(BalThreadParams* params);
 DWORD BalWait(BalWaitParams* params);
 
@@ -90,7 +92,10 @@ int ThreadSleep(Thread thread, int miliseconds)
     }
     BalWaitParams* _params = malloc(sizeof(BalWaitParams));
     if (_params == 0)
+    {
+        ThreadResume(thread);
         return BAL_THREAD_ERROR_MEMORY;
+    }
     _params->thread = thread;
     _params->miliseconds = miliseconds;
     HANDLE _h = CreateThread(0, 0, BalWait, _params, CREATE_SUSPENDED, 0);
@@ -139,6 +144,10 @@ int ThreadResume(Thread thread)
         return GetLastError();
     WIN_THREAD(thread)->isPaused = 0;
     return BAL_THREAD_SUCCESS;
+}
+
+Thread ThreadGetCurrent()
+{
 }
 
 int ThreadWaitForExit(Thread thread, int* exitCode)

@@ -2,6 +2,13 @@
     "files.associations": {
         "wui.h": "c",
         "point.h": "c",
-        "key_id.h": "c"
+        "key_id.h": "c",
+        "vector.h": "c",
+        "colormap.h": "c",
+        "malloc.h": "c",
+        "component.h": "c",
+        "events.h": "c",
+        "color.h": "c",
+        "thread.h": "c"
     }
 }

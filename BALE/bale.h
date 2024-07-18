@@ -8,8 +8,8 @@
 #include "math/vector3.h"
 #include "ui/component.h"
 #include "ui/events.h"
-#include "ui/ui.h"
 #include "thread/thread.h"
+#include "ui/ui.h"
 #include "key_id.h"
 
 #endif

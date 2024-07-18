@@ -1,11 +1,11 @@
 #ifndef WUI_H
 #define WUI_H
 #include <Windows.h>
-#include "../../math/point.h"
-#include "../../colormap/color.h"
-#include "../../colormap/colormap.h"
-#include "../events.h"
-#include "../component.h"
+#include "../../../BALE/math/point.h"
+#include "../../../BALE/colormap/color.h"
+#include "../../../BALE/colormap/colormap.h"
+#include "../../../BALE/ui/events.h"
+#include "../../../BALE/ui/component.h"
 
 typedef struct WinWindow_t
 {
