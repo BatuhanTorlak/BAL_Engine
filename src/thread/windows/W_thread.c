@@ -1,4 +1,4 @@
-#include "../../../BALE/thread/thread.h"
+#include "thread/thread.h"
 #include <windows.h>
 #define WIN_THREAD(thread) ((WinThread*)thread)
 
@@ -78,6 +78,7 @@ int ThreadCreate(Thread* thread, BALThreadStart startPoint, void* parameters)
         return BAL_THREAD_ERROR_CREATION;
     }
     *thread = _thrd;
+    SetThreadDescription(_thrd->threadHandle, _thrd);
 
     return BAL_THREAD_SUCCESS;
 }
@@ -110,6 +111,12 @@ int ThreadSleep(Thread thread, int miliseconds)
     if (_c == -1)
         return BAL_THREAD_ERROR_PAUSE;
     return BAL_THREAD_SUCCESS;
+}
+
+int ThreadSleepA(int miliseconds)
+{
+    Sleep(miliseconds);
+    return 1;
 }
 
 int ThreadPause(Thread thread)
@@ -146,8 +153,45 @@ int ThreadResume(Thread thread)
     return BAL_THREAD_SUCCESS;
 }
 
+int ThreadInfo(Thread thread, ThreadInformation* info)
+{
+    *info = (ThreadInformation){
+        .isAlive = WIN_THREAD(thread)->isAlive,
+        .isPaused = WIN_THREAD(thread)->isPaused
+    };
+}
+
 Thread ThreadGetCurrent()
 {
+    HANDLE _threadHandle = GetCurrentThread();
+    PWSTR _str;
+    HRESULT _result = GetThreadDescription(_threadHandle, &_str);
+    if (FAILED(_result))
+    {
+        CloseHandle(_threadHandle);
+        return 0;
+    }
+    DWORD _id = GetThreadId(_threadHandle);
+    if (((PWinThread)_str)->threadID != _id)
+    {
+        PWinThread _thrd = malloc(sizeof(WinThread));
+        if (_thrd == 0)
+        {
+            CloseHandle(_threadHandle);
+            return 0;
+        }
+        *_thrd = (WinThread){
+            .isAlive = 1,
+            .isPaused = 0,
+            .threadHandle = _threadHandle,
+            .threadID = _id,
+            .exitCode = 0
+        };
+        SetThreadDescription(_threadHandle, _thrd);
+        return _thrd;
+    }
+    CloseHandle(_threadHandle);
+    return _str;
 }
 
 int ThreadWaitForExit(Thread thread, int* exitCode)

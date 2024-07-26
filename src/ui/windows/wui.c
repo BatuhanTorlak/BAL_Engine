@@ -6,7 +6,7 @@
 #define BAL_MALLOC(__size) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, __size)
 #define BAL_MALLOC_0(__size) HeapAlloc(GetProcessHeap(), 0, __size)
 #define BAL_FREE(__ptr) HeapFree(GetProcessHeap(), 0, __ptr)
-#include "wui.h"
+#include "./wui.h"
 #include <malloc.h>
 #include <math.h>
 
@@ -257,8 +257,13 @@ DWORD WinWindowManagement(__paramsPtr param)
 
     MSG _msg;
     PMSG _pMsg = &_msg;
-    while (GetMessageW(_pMsg, windowHandler, 0, 0))
+    int _err;
+    while (_err = GetMessageW(_pMsg, windowHandler, 0, 0))
     {
+        if (_err == -1)
+        {
+            break;
+        }
         TranslateMessage(_pMsg);
         DispatchMessage(_pMsg);
     }

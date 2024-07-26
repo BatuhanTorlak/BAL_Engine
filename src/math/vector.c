@@ -1,4 +1,4 @@
-#include "../../BALE/math/vector.h"
+#include "math/vector.h"
 #include <math.h>
 
 /// @brief Distance between start to end in two dimension

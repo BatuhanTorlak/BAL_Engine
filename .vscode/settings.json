@@ -9,6 +9,7 @@
         "component.h": "c",
         "events.h": "c",
         "color.h": "c",
-        "thread.h": "c"
+        "thread.h": "c",
+        "windows.h": "c"
     }
 }

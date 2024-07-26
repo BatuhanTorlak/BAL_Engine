@@ -1,5 +1,5 @@
 #include <malloc.h>
-#include "../../BALE/ui/component.h"
+#include "ui/component.h"
 
 void* ComponentCreate(int componentSize, ColorMap* background, Point2D position, Point2D size)
 {

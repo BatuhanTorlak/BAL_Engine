@@ -7,7 +7,7 @@ WIN_FILES=src/ui/windows/wui.c src/thread/windows/W_thread.c
 LIN_FILES=src/ui/linux/lui.c src/thread/linux/L_thread.c
 
 compilewin:
-	$(CC) -c $(GLOBAL_FILES) $(WIN_FILES) $(CFLAGS)
+	$(CC) -c -IBALE $(GLOBAL_FILES) $(WIN_FILES) $(CFLAGS)
 	ar rcs BALE/libwbale.a *.o
 	rm *.o
 

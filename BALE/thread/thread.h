@@ -35,22 +35,45 @@ typedef int(*BALThreadStart)(void* params);
 /// @param thread [OUT] Thread's handler
 /// @param startFunction [IN] Thread's start position
 /// @param startFunction [IN] Thread's start position
-/// @return Generic thread manager
+/// @return Function status
 int ThreadCreate(Thread* thread, BALThreadStart startPoint, void* parameters);
 
 /// @brief [MADE IN PROGRESS!] Creates and runs a thread on current process
+/// @param thread [OUT] Thread's handler
 /// @param startFunction [IN] Thread's start position
 /// @param threadOptions [IN] Thread's options
-/// @return Generic thread manager
+/// @return Function status
 int ThreadCreateA(Thread* thread, BALThreadStart startPoint, ThreadOptions threadOptions);
 
+/// @brief Makes choosen thread sleep for choosen miliseconds
+/// @param thread [IN] Choosen thread
+/// @param miliseconds [IN] Miliseconds to wait
+/// @return Function status
 int ThreadSleep(Thread thread, int miliseconds);
 
+/// @brief Makes current thread wait
+/// @param miliseconds [IN] Miliseconds for wait
+/// @return Always returns 1 :)
+int ThreadSleepA(int miliseconds);
+
+/// @brief Makes choosen thread pause
+/// @param thread [IN] Choosen thread
+/// @return Function status
 int ThreadPause(Thread thread);
+
+/// @brief Makes choosen thread resume
+/// @param thread [IN] Choosen thread
+/// @return Function status
 int ThreadResume(Thread thread);
 
-int ThreadStatus(Thread thread, ThreadInformation* status);
+/// @brief Gets Thread's information
+/// @param thread [IN] Thread
+/// @param info [OUT] Thread's information
+/// @return Function status
+int ThreadInfo(Thread thread, ThreadInformation* info);
 
+/// @brief Get current thread's manager
+/// @return Thread manager
 Thread ThreadGetCurrent();
 
 int ThreadWaitForExit(Thread thread, int* exitCode);

@@ -1,1 +1,1 @@
-#include "../../BALE/math/point.h"
+#include "math/point.h"

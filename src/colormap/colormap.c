@@ -1,7 +1,7 @@
-#include "../../BALE/colormap/colormap.h"
+#include "colormap/colormap.h"
 #include <malloc.h>
 #include <math.h>
-#include "../../BALE/math/point.h"
+#include "math/point.h"
 #include <stdio.h>
 
 int RoundInt(float number)
@@ -151,13 +151,13 @@ void ColorMapDrawLine(const ColorMap* colorMap, Point2D start, Point2D end, cons
     {
         for (; sX < eX; sX++)
         {
-            ColorMapSetPixelA(colorMap, RoundInt(sX * n + m), sX, color);
+            ColorMapSetPixelA(colorMap, (int)(sX * n + m + .5f), sX, color);
         }
         return;
     }
     for (; sX < eX; sX++)
     {
-        ColorMapSetPixelA(colorMap, sX, RoundInt(sX * n + m), color);
+        ColorMapSetPixelA(colorMap, sX, (int)(sX * n + m + .5f), color);
     }
 }
 

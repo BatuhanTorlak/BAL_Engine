@@ -1,1 +1,1 @@
-#include "../../BALE/colormap/color.h"
+#include "colormap/color.h"
