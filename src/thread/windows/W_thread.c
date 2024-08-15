@@ -1,4 +1,5 @@
 #include "thread/thread.h"
+#include "win_defs.h"
 #include <windows.h>
 #define WIN_THREAD(thread) ((WinThread*)thread)
 
@@ -33,7 +34,7 @@ DWORD BalWait(BalWaitParams* params);
 DWORD BalThreadStart(BalThreadParams* params)
 {
     BalThreadParams _params = *params;
-    free(params);
+    BAL_FREE(params);
     PWinThread _thrd = _params.balThread;
     _thrd->exitCode = _params.start(params->params);
     _thrd->isAlive = 0;
@@ -43,7 +44,7 @@ DWORD BalThreadStart(BalThreadParams* params)
 DWORD BalWait(BalWaitParams* params)
 {
     BalWaitParams _params = *params;
-    free(params);
+    BAL_FREE(params);
     Sleep(_params.miliseconds);
     ThreadResume(_params.thread);
     CloseHandle(_params.handle);
@@ -52,16 +53,16 @@ DWORD BalWait(BalWaitParams* params)
 int ThreadCreate(Thread* thread, BALThreadStart startPoint, void* parameters)
 {
     *thread = 0;
-    PWinThread _thrd = malloc(sizeof(WinThread));
+    PWinThread _thrd = BAL_MALLOC(sizeof(WinThread));
     if (_thrd == 0)
         return BAL_THREAD_ERROR_MEMORY;
     _thrd->isAlive = 1;
     _thrd->isPaused = 0;
 
-    BalThreadParams* _params = malloc(sizeof(BalThreadParams));
+    BalThreadParams* _params = BAL_MALLOC(sizeof(BalThreadParams));
     if (_params == 0)
     {
-        free(_thrd);
+        BAL_FREE(_thrd);
         return BAL_THREAD_ERROR_MEMORY;
     }
     *_params = (BalThreadParams){
@@ -73,8 +74,8 @@ int ThreadCreate(Thread* thread, BALThreadStart startPoint, void* parameters)
     _thrd->threadHandle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)BalThreadStart, _params, 0, &_thrd->threadID);
     if (_thrd->threadHandle == 0)
     {
-        free(_thrd);
-        free(_params);
+        BAL_FREE(_thrd);
+        BAL_FREE(_params);
         return BAL_THREAD_ERROR_CREATION;
     }
     *thread = _thrd;
@@ -91,7 +92,7 @@ int ThreadSleep(Thread thread, int miliseconds)
         if (_code != BAL_THREAD_SUCCESS)
             return _code;
     }
-    BalWaitParams* _params = malloc(sizeof(BalWaitParams));
+    BalWaitParams* _params = BAL_MALLOC(sizeof(BalWaitParams));
     if (_params == 0)
     {
         ThreadResume(thread);
@@ -102,7 +103,7 @@ int ThreadSleep(Thread thread, int miliseconds)
     HANDLE _h = CreateThread(0, 0, BalWait, _params, CREATE_SUSPENDED, 0);
     if (_h == 0)
     {
-        free(_params);
+        BAL_FREE(_params);
         ThreadResume(thread);
         return BAL_THREAD_ERROR_CREATION;
     }
@@ -174,7 +175,7 @@ Thread ThreadGetCurrent()
     DWORD _id = GetThreadId(_threadHandle);
     if (((PWinThread)_str)->threadID != _id)
     {
-        PWinThread _thrd = malloc(sizeof(WinThread));
+        PWinThread _thrd = BAL_MALLOC(sizeof(WinThread));
         if (_thrd == 0)
         {
             CloseHandle(_threadHandle);
@@ -216,12 +217,12 @@ int ThreadDestroy(Thread* thread)
     {
         TerminateThread(_threadHandle, 0);
         CloseHandle(_threadHandle);
-        free(*thread);
+        BAL_FREE(*thread);
         *thread = 0;
         return BAL_THREAD_FORCED_TO_EXIT;
     }
     CloseHandle(_threadHandle);
-    free(*thread);
+    BAL_FREE(*thread);
     *thread = 0;
     return BAL_THREAD_SUCCESS;
 }

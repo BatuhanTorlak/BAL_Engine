@@ -1,11 +1,8 @@
-#include "../../BALE/colormap/colormap.h"
+#include "colormap/color.h"
 
-typedef ColorMap CudaColorMap;
+typedef Color* CudaColorArray;
 
-CudaColorMap CudaColorMapCreate(ColorMap* referance);
-
-int CudaColorMapUpdate(CudaColorMap* destination, ColorMap* source);
-
-int CudaColorMapMerge(CudaColorMap* plate, int xPos, int yPos, CudaColorMap* image);
-
-int CudaColorMapDestroy(CudaColorMap map);
+CudaColorArray CudaColorArrayCreate(int width, int height);
+void CudaColorArrayMerge(CudaColorArray bottom, CudaColorArray top);
+void CudaColorArrayMergeA(CudaColorArray plate, CudaColorArray bottom, CudaColorArray top);
+void CudaColorArrayDestroy(CudaColorArray arr);

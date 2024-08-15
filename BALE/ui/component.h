@@ -19,7 +19,9 @@ ComponentDestroy(component);
 typedef struct Component_t
 {
     int sOC;
-    void* parent;
+    void* reserved;
+    int render;
+    int enabled;
     ComponentEvents* events;
     ColorMap* background;
     Point2D position;
@@ -32,7 +34,7 @@ typedef struct Component_t
 /// @param position [IN] Position of the component
 /// @param size [IN] Size of the component
 /// @return Custom component
-void* ComponentCreate(int componentSize, ColorMap* background, Point2D position, Point2D size);
+void* ComponentCreate(int componentSize, int isRenderable, ColorMap* background, Point2D position, Point2D size);
 
 /// @brief Destroys the custom component
 /// @param destroyComponent [IN] Component to be destroyed

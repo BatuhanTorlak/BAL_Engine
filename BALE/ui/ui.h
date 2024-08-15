@@ -50,7 +50,7 @@ void WindowSetPixelA(const Window window, int xPos, int yPos, Color color);
 /// @param start [IN] Start point on window
 /// @param end [IN] End point on window
 /// @param color [IN] Color of line
-void WindowDrawLine(const Window window, Point2D start, Point2D end, Color color);
+void WindowDrawLine(Window window, Point2D start, Point2D end, Color color);
 
 /// @brief Draws line on window
 /// @param window [IN] Generic window manager
@@ -59,22 +59,24 @@ void WindowDrawLine(const Window window, Point2D start, Point2D end, Color color
 /// @param endX [IN] X coordinate of end point on window
 /// @param endY [IN] Y coordinate of end point on window
 /// @param color [IN] Color of line
-void WindowDrawLineA(const Window window, int startX, int startY, int endX, int endY, Color color);
+void WindowDrawLineA(Window window, int startX, int startY, int endX, int endY, Color color);
 
 /// @brief Sets all the pixel on the window to black(0, 0, 0)
 /// @param window [IN] Generic window manager
-void WindowClear(const Window window);
+void WindowClear(Window window);
 
 /// @brief Set all the pixel on the window to the chosen color
 /// @param window [IN] Generic window manager
 /// @param color [IN] Chosen color
-void WindowClearA(const Window window, Color color);
+void WindowClearA(Window window, Color color);
 
 void WindowSetPosition(const Window window, Point2D position);
 void WindowSetPositionA(const Window window, int xPos, int yPos);
 
-void WindowSetSize(const Window window, Point2D size);
-void WindowSetSizeA(const Window window, int xSize, int ySize);
+void WindowSetSize(Window window, Point2D size);
+void WindowSetSizeA(Window window, int xSize, int ySize);
+
+void WindowFocusComponent(Window window, Component* component);
 
 /// @brief Set new event handler to window
 /// @param window [IN] Generic window manager
@@ -94,6 +96,8 @@ void WindowRemoveComponent(Window window, Component* oldComponent);
 /// @brief Updates window's screen
 /// @param window [IN] Generic window manager
 void WindowRender(const Window window);
+
+void WindowRenderRequest(Window window);
 
 /// @brief Checks if program is still running or not, runs specific events, updates window's screen and makes program wait for (1second / FPS)
 /// @param window [IN] Generic window manager

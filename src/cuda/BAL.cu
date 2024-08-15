@@ -4,7 +4,7 @@
 #define ERR_CHECK(_err) if (_err != cudaError::cudaSuccess)
 #define ERR_CHECK_A(_err) (_err != cudaError::cudaSuccess)
 
-CudaColorMap CudaColorMapCreate(ColorMap* referance)
+CudaColorArray CudaColorMapCreate(Color* referance)
 {
-    cudaError _err;
+    
 }
