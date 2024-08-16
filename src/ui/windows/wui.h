@@ -61,21 +61,21 @@ void WindowDestroy(const WinWindow** window);
 /// @param window Generic window manager
 /// @param point Point to drawn on window
 /// @param color Color of line
-void WindowSetPixel(const WinWindow* window, Point2D point, Color color);
+void WindowSetPixel(WinWindow* window, Point2D point, Color color);
 
 /// @brief Set pixel on window
 /// @param window Generic window manager
 /// @param xPos X coordinate of point to drawn on window
 /// @param yPos Y coordinate of point to drawn on window
 /// @param color Color of line
-void WindowSetPixelA(const WinWindow* window, int xPos, int yPos, Color color);
+void WindowSetPixelA(WinWindow* window, int xPos, int yPos, Color color);
 
 /// @brief Draws line on window
 /// @param window Generic window manager
 /// @param start Start point on window
 /// @param end End point on window
 /// @param color Color of line
-void WindowDrawLine(const WinWindow* window, Point2D start, Point2D end, Color color);
+void WindowDrawLine(WinWindow* window, Point2D start, Point2D end, Color color);
 
 /// @brief Draws line on window
 /// @param window Generic window manager
@@ -84,16 +84,16 @@ void WindowDrawLine(const WinWindow* window, Point2D start, Point2D end, Color c
 /// @param endX X coordinate of end point on window
 /// @param endY Y coordinate of end point on window
 /// @param color Color of line
-void WindowDrawLineA(const WinWindow* window, int startX, int startY, int endX, int endY, Color color);
+void WindowDrawLineA(WinWindow* window, int startX, int startY, int endX, int endY, Color color);
 
-void WindowClear(const WinWindow* window);
-void WindowClearA(const WinWindow* window, Color color);
+void WindowClear(WinWindow* window);
+void WindowClearA(WinWindow* window, Color color);
 
 void WindowSetPosition(const WinWindow* window, Point2D position);
 void WindowSetPositionA(const WinWindow* window, int xPos, int yPos);
 
-void WindowSetSize(const WinWindow* window, Point2D size);
-void WindowSetSizeA(const WinWindow* window, int xSize, int ySize);
+void WindowSetSize(WinWindow* window, Point2D size);
+void WindowSetSizeA(WinWindow* window, int xSize, int ySize);
 
 /// @brief Set new event handler to window
 /// @param window Generic window manager

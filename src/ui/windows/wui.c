@@ -146,7 +146,7 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
 	    currentWindow->drawing.renderOrder = 1;
         }
         break;
-    case WM_LBUTTONDOWN:
+    case WM_LBUTTONDOWN: ;
         int _xPos = LOWORD(c);
         int _yPos = HIWORD(c);
 
@@ -182,7 +182,7 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
             _com->events->OnClick(currentWindow, _com, _xPos, _yPos);
         }
         break;
-    case WM_KEYDOWN:
+    case WM_KEYDOWN: ;
         // Focused component event
         Component* _comp = currentWindow->componentManager.focusedComponent;
         if (_comp && _comp->enabled && _comp->events && _comp->events->OnKeyDown)
@@ -192,7 +192,7 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
         if (currentWindow->events && currentWindow->events->OnKeyDown)
             currentWindow->events->OnKeyDown(currentWindow, b);
         break;
-    case WM_MOVING:
+    case WM_MOVING: ;
         RECT _nPos = *((RECT*)c);
         currentWindow->position.x = _nPos.left;
         currentWindow->position.y = _nPos.top;
@@ -423,17 +423,17 @@ void WindowAddComponent(WinWindow* win, Component* component)
 {
     if (win == 0 || win->isAlive == 0 || component == 0 || component->sOC == 0)
         return;
-    WinWindow _win = *win;
-    if (_win.componentManager.componentsCount == _win.componentManager.componentsCapacity)
+    struct ComponentManager_t _win = win->componentManager;
+    if (_win.componentsCount == _win.componentsCapacity)
     {
-        win->componentManager.componentsCapacity = _win.componentManager.componentsCount + 6;
+        win->componentManager.componentsCapacity = _win.componentsCount + 6;
         Component** _comps = win->componentManager.components;
         _comps = BAL_REALLOC(_comps, sizeof(Component*) * win->componentManager.componentsCapacity);
         win->componentManager.components = _comps;
-        BAL_FREE(_win.componentManager.components);
-        _win.componentManager.components = win->componentManager.components;
+        BAL_FREE(_win.components);
+        _win.components = win->componentManager.components;
     }
-    _win.componentManager.components[_win.componentManager.componentsCount] = component;
+    _win.components[_win.componentsCount] = component;
     win->componentManager.componentsCount++;
 }
 
@@ -441,22 +441,22 @@ void WindowRemoveComponent(WinWindow* win, Component* component)
 {
     if (win == 0 || win->isAlive == 0 || component == 0 || component->sOC == 0)
         return;
-    WinWindow _win = *win;
-    Component** _comps = _win.componentManager.components;
+    struct ComponentManager_t _win = win->componentManager;
+    Component** _comps = _win.components;
     int x = 0;
-    for (; x < _win.componentManager.componentsCount; x++)
+    for (; x < _win.componentsCount; x++)
     {
         if (_comps[x] == component)
             goto _c;
     }
     return;
-    _c:
+    _c: ;
     Component** __ = _comps + x * sizeof(Component*);
-    BAL_MEMMOV(__ + 1, __, _win.componentManager.componentsCount - x);
-    if (_win.componentManager.componentsCount == _win.componentManager.componentsCapacity - 8)
+    BAL_MEMMOV(__ + 1, __, _win.componentsCount - x);
+    if (_win.componentsCount == _win.componentsCapacity - 8)
     {
-        win->componentManager.componentsCapacity = _win.componentManager.componentsCount -= 6;
-        _comps = BAL_REALLOC(_comps, sizeof(Component*) * _win.componentManager.componentsCapacity);
+        win->componentManager.componentsCapacity = _win.componentsCount -= 6;
+        _comps = BAL_REALLOC(_comps, sizeof(Component*) * _win.componentsCapacity);
         win->componentManager.components = _comps;
     }
     win->componentManager.componentsCount--;
