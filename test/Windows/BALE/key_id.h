@@ -6,4 +6,4 @@
 #define BAL_KEY_LEFT VK_LEFT
 #define BAL_KEY_RIGHT VK_RIGHT
 
-#endif KEY_ID_H
+#endif

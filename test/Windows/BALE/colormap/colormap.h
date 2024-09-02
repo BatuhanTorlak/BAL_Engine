@@ -15,6 +15,8 @@ typedef struct ColorMap_t
     int height;
     int linearSize;
     float ratio;
+    void* reserved;
+    void* other;
 } 
 /// @brief Two dimensional color storage and graphical structer
 ColorMap, *PColorMap;

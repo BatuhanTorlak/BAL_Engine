@@ -12,6 +12,7 @@ typedef struct WinWindow_t
     WNDCLASSW windowClass;
     HWND windowHandler;
     HANDLE threadHandler;
+    HANDLE heapHandler;
     HDC drawingContentHandler;
     PColorMap colorMap;
     WindowEvents events;
@@ -112,7 +113,7 @@ void WindowRemoveComponent(WinWindow* window, Component* oldComponent);
 
 /// @brief Updates window's screen
 /// @param window Generic window manager
-void WindowRender(const WinWindow* window);
+void WindowRender(WinWindow* window);
 
 /// @brief Checks if program is still running or not, runs specific events, updates window's screen and makes program wait for (1second / FPS)
 /// @param window Generic window manager

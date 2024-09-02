@@ -116,54 +116,38 @@ int ColorMapGetPixelA(const ColorMap* colorMap, const int x, const int y, Color*
 
 void ColorMapDrawLine(const ColorMap* colorMap, Point2D start, Point2D end, const Color color)
 {
-    int _a = end.x - start.x;
-    int _b = end.y - start.y;
-    const int _w = colorMap->width;
-    const int _h = colorMap->height;
-    int sX;
-    int eX;
-    const char _check = abs(_b) > abs(_a);
-    if (_check)
-    {
-        register int _s = start.x;
-        start.x = start.y;
-        start.y = _s;
-        _s = end.x;
-        end.x = end.y;
-        end.y = _s;
-        _s = _a;
-        _a = _b;
-        _b = _s;
-    }
-    if (start.x < end.x)
-    {
-        sX = start.x;
-        eX = end.x;
-    }
-    else
-    {
-        sX = end.x;
-        eX = start.x;
-    }
-    const register float n = (float)_b / (float)_a;
-    const register float m = start.y - start.x * n;
-    if (_check)
-    {
-        for (; sX < eX; sX++)
-        {
-            ColorMapSetPixelA(colorMap, (int)(sX * n + m + .5f), sX, color);
-        }
-        return;
-    }
-    for (; sX < eX; sX++)
-    {
-        ColorMapSetPixelA(colorMap, sX, (int)(sX * n + m + .5f), color);
-    }
+    ColorMapDrawLineA(colorMap, start.x, start.y, end.x, end.y, color);
 }
 
 void ColorMapDrawLineA(const ColorMap* colorMap, int startX, int startY, int endX, int endY, const Color color)
 {
-    ColorMapDrawLine(colorMap, Point2DCreate(startX, startY), Point2DCreate(endX, endY), color);
+    int _a = endX - startX;
+    int _b = endY - startY;
+    if ((_a | _b) == 0)
+        return;
+    int _diff;
+    if (abs(_a) > abs(_b))
+    {
+        if (_a > 0)
+        {
+            if (_b > 0)
+            {
+                _diff = _a / _b;
+                for (int x = 0; x < _b; x++)
+                {
+                    int y = 0;
+                    for (; y < _diff; y++)
+                    {
+                        ColorMapSetPixelA(colorMap, startX + y, startY + x, color);
+                    }
+                    startX += y;
+                }
+                return;
+            }
+            return;
+        }
+        return;
+    }
 }
 
 void ColorMapClear(const ColorMap* colorMap)

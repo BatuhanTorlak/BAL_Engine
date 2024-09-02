@@ -5,8 +5,8 @@
 #define BAL_DEFAULT_NAME L"Test"
 #include "win_defs.h"
 #include "./wui.h"
-#include <malloc.h>
 #include <math.h>
+#include <stdio.h>
 
 #define BAL_DEFAULT_CLEAR_COLOR ColorCreate(0, 0, 0)
 
@@ -18,6 +18,7 @@ typedef struct __params_t
     int height;
     WinWindow* win;
     HANDLE mainThread;
+    int started;
 } __params, *__paramsPtr;
 
 typedef struct ColorCOLORREF_u
@@ -27,17 +28,17 @@ typedef struct ColorCOLORREF_u
 } ColorCOLORREF;
 
 WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, int yPos, int width, int height);
-LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c);
-DWORD WinWindowManagement(__paramsPtr param);
+LRESULT WINAPI WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c);
+DWORD WINAPI WinWindowManagement(__paramsPtr param);
 
-LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
+LRESULT WINAPI WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
 {
     if (msg == WM_CREATE)
     {
-        CREATESTRUCTW* _crstruct = c;
+        CREATESTRUCTW* _crstruct = (CREATESTRUCTW*)c;
         __paramsPtr _params = _crstruct->lpCreateParams;
         WinWindow* _win = _params->win;
-        SetWindowLongPtrA(hWnd, GWLP_USERDATA, _win);
+        SetWindowLongPtrA(hWnd, GWLP_USERDATA, (LONG_PTR)_win);
     }
 
     WinWindow* currentWindow = (WinWindow*)GetWindowLongPtrA(hWnd, GWLP_USERDATA);
@@ -101,7 +102,7 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
             HDC _oldDC = currentWindow->drawing.bitmapDrawingContentHandler;
 
             Color* _clrs = 0;
-            HBITMAP _newBitmap = CreateDIBSection(0, &_info, DIB_RGB_COLORS, &(_clrs), 0, 0);
+            HBITMAP _newBitmap = CreateDIBSection(0, &_info, DIB_RGB_COLORS, (void**)&(_clrs), 0, 0);
             HDC _dc = CreateCompatibleDC(0);
 
             SelectObject(_dc, _newBitmap);
@@ -127,7 +128,7 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
 
             DeleteDC(_oldDC);
             DeleteObject(_oldBitmap);
-	    CloseHandle(_oldBitmap);
+	        CloseHandle(_oldBitmap);
             CloseHandle(_oldDC);
 
             // Window event
@@ -203,7 +204,7 @@ LRESULT WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
     return DefWindowProcW(hWnd, msg, b, c);
 }
 
-DWORD WinWindowManagement(__paramsPtr param)
+DWORD WINAPI WinWindowManagement(__paramsPtr param)
 {
     WNDCLASSW _class = { 0 };
     _class.hCursor = LoadCursor(0, IDC_ARROW);
@@ -214,13 +215,14 @@ DWORD WinWindowManagement(__paramsPtr param)
 
     ATOM _ch = RegisterClassW(&_class);
 
-    HWND windowHandler = CreateWindowExW(0, _ch, param->windowName, WS_OVERLAPPEDWINDOW | WS_VISIBLE, 10, 10, param->width, param->height, 0, 0, 0, param);
+    HWND windowHandler = CreateWindowExW(0, (LPCWSTR)_ch, param->windowName, WS_OVERLAPPEDWINDOW | WS_VISIBLE, 10, 10, param->width, param->height, 0, 0, 0, param);
 
     WinWindow* win = param->win;
 
     win->windowHandler = windowHandler;
     win->windowClass = _class;
     win->drawingContentHandler = GetDC(windowHandler);
+    win->heapHandler = GetProcessHeap();
 
     BITMAPINFO _info = {
         .bmiHeader = {
@@ -234,10 +236,10 @@ DWORD WinWindowManagement(__paramsPtr param)
     };
 
     win->drawing.bitmapDrawingContentHandler = CreateCompatibleDC(0);
-    win->drawing.bitmap = CreateDIBSection(0, &_info, DIB_RGB_COLORS, &(win->drawing.bitmapColors), 0, 0);
+    win->drawing.bitmap = CreateDIBSection(0, &_info, DIB_RGB_COLORS, (void**)&(win->drawing.bitmapColors), 0, 0);
     SelectObject(win->drawing.bitmapDrawingContentHandler, win->drawing.bitmap);
 
-    PColorMap colorMap = BAL_MALLOC_0(sizeof(ColorMap));
+    PColorMap colorMap = BAL_WIN_MALLOC_0(win, sizeof(ColorMap));
     colorMap->width = param->width;
     colorMap->height = param->height;
     colorMap->linearSize = param->width * param->height;
@@ -252,6 +254,9 @@ DWORD WinWindowManagement(__paramsPtr param)
     win->isAlive = 1;
 
     ResumeThread(param->mainThread);
+    
+    //param->started = 0;
+    BAL_WIN_FREE(win, param);
 
     ShowWindow(windowHandler, SW_SHOW);
 
@@ -273,25 +278,38 @@ WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, 
 {
     HANDLE _threadHandle = GetCurrentThread();
 
-    WinWindow* _ = BAL_MALLOC_0(sizeof(WinWindow));
-    __paramsPtr _param = BAL_MALLOC(sizeof(__params));
+    HANDLE _heapHandler = GetProcessHeap();
+
+    //WinWindow* _ = BAL_MALLOC(sizeof(WinWindow));
+    WinWindow* _ = HeapAlloc(_heapHandler, HEAP_ZERO_MEMORY, sizeof(WinWindow));
+
+    //__paramsPtr _param = BAL_MALLOC(sizeof(__params));
+    __paramsPtr _param = HeapAlloc(_heapHandler, 0, sizeof(__params));
     *_param = (__params){
         .className = name,
         .windowName = name,
         .width = width,
         .height = height,
         .win = _,
-        .mainThread = _threadHandle
+        .mainThread = _threadHandle,
+        .started = 1
     };
 
     _->componentManager.componentsCapacity = 6;
     _->componentManager.componentsCount = 0;
-    _->componentManager.components = BAL_MALLOC_0(sizeof(Component**) * 6);
+    _->componentManager.components = HeapAlloc(_heapHandler, HEAP_ZERO_MEMORY, sizeof(Component*) * 6);
     _->threadHandler = CreateThread(0, 0, (DWORD(*)(LPVOID))WinWindowManagement, _param, 0, 0);
 
     SuspendThread(_threadHandle);
 
-    CloseHandle(_threadHandle);
+    /*while (_param->started)
+    {
+        Sleep(1);
+    }
+
+    HeapFree(_heapHandler, 0, _param);*/
+
+    CloseHandle(_heapHandler);
 
     MoveWindow(_->windowHandler, xPos, yPos, width, height, FALSE);
 
@@ -317,8 +335,8 @@ void WindowSetPixel(WinWindow* win, Point2D position, Color color)
 {
     if (win == 0 && win->isAlive)
     {
-	ColorMapSetPixel(win->colorMap, position, color);
-	win->drawing.renderOrder = 1;
+        ColorMapSetPixel(win->colorMap, position, color);
+        win->drawing.renderOrder = 1;
     }
 }
 
@@ -327,7 +345,7 @@ void WindowSetPixelA(WinWindow* win, int xPos, int yPos, Color color)
     if (win && win->isAlive)
     {
         ColorMapSetPixelA(win->colorMap, xPos, yPos, color);
-	win->drawing.renderOrder = 1;
+        win->drawing.renderOrder = 1;
     }
 }
 
@@ -335,8 +353,8 @@ void WindowDrawLine(WinWindow* win, Point2D start, Point2D end, Color color)
 {
     if (win && win->isAlive)
     {
-	ColorMapDrawLine(win->colorMap, start, end, color);
-	win->drawing.renderOrder = 1;
+        ColorMapDrawLine(win->colorMap, start, end, color);
+        win->drawing.renderOrder = 1;
     }
 }
 
@@ -345,7 +363,7 @@ void WindowDrawLineA(WinWindow* win, int x1, int y1, int x2, int y2, Color color
     if (win && win->isAlive)
     {
         ColorMapDrawLineA(win->colorMap, x1, y1, x2, y2, color);
-	win->drawing.renderOrder = 1;
+	    win->drawing.renderOrder = 1;
     }
 }
 
@@ -373,7 +391,7 @@ void WindowClearA(WinWindow* window, Color color)
         {
             WindowSetPixelA(window, x, y, color);
         }
-	window->drawing.renderOrder = 1;
+	    window->drawing.renderOrder = 1;
     }
 }
 
@@ -428,7 +446,7 @@ void WindowAddComponent(WinWindow* win, Component* component)
     {
         win->componentManager.componentsCapacity = _win.componentsCount + 6;
         Component** _comps = win->componentManager.components;
-        _comps = BAL_REALLOC(_comps, sizeof(Component*) * win->componentManager.componentsCapacity);
+        _comps = BAL_WIN_REALLOC(win, _comps, sizeof(Component*) * win->componentManager.componentsCapacity);
         win->componentManager.components = _comps;
         BAL_FREE(_win.components);
         _win.components = win->componentManager.components;
@@ -456,13 +474,13 @@ void WindowRemoveComponent(WinWindow* win, Component* component)
     if (_win.componentsCount == _win.componentsCapacity - 8)
     {
         win->componentManager.componentsCapacity = _win.componentsCount -= 6;
-        _comps = BAL_REALLOC(_comps, sizeof(Component*) * _win.componentsCapacity);
+        _comps = BAL_WIN_REALLOC(win, _comps, sizeof(Component*) * _win.componentsCapacity);
         win->componentManager.components = _comps;
     }
     win->componentManager.componentsCount--;
 }
 
-void WindowRender(const WinWindow* win)
+void WindowRender(WinWindow* win)
 {
     if (win == 0 || win->isAlive == 0)
         return;
@@ -472,6 +490,8 @@ void WindowRender(const WinWindow* win)
     const restrict HDC bitmapDrawingContentHandler = win->drawing.bitmapDrawingContentHandler;
 
     BOOL _x = BitBlt(_hdc, 0, 0, colorMap->width, colorMap->height, bitmapDrawingContentHandler, 0, 0, SRCCOPY);
+
+    win->drawing.renderOrder = 0;
 }
 
 void WindowRenderRequest(WinWindow* win)
@@ -489,7 +509,7 @@ char WindowUpdate(const WinWindow* win, const int FPS)
     if (events && events->Update)
         events->Update(win);
     if (win->drawing.renderOrder)
-	WindowRender(win);
+	    WindowRender(win);
     Sleep(1000 / FPS);
     return 1;
 }
@@ -517,6 +537,7 @@ void WindowDestroy(const WinWindow** win)
 
     UnregisterClassW(_win->windowClass.lpszClassName, 0);
 
-    BAL_FREE(_win->colorMap);
-    BAL_FREE(_win);
+    BAL_WIN_FREE(_win, _win->colorMap);
+
+    BAL_WIN_FREE(_win, _win);
 }

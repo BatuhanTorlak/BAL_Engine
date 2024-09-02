@@ -1,9 +1,10 @@
 #include <stdio.h>
 
-#include "BALE/bale.h"
+#include "bale.h"
 
 void TestUpdate(const Window win)
 {
+    printf("Update\n");
 }
 
 int _x = -1;
@@ -22,6 +23,7 @@ void TestOnClick(const Window win, int xPos, int yPos)
     WindowDrawLineA(win, _x, _y, xPos, yPos, ColorCreate(0, 0, 255));
     _x = xPos;
     _y = yPos;
+    WindowRenderRequest(win);
 }
 
 void TestOnKeyDown(const Window win, int charac)
@@ -48,12 +50,13 @@ int main()
     PWindow pWin = &win;
     
     WindowEvents events = WindowEventsCreate();
-    events->Update = TestUpdate;
-    events->OnClick = TestOnClick;
-    events->OnKeyDown = TestOnKeyDown;
-    events->OnSizeChanged = TestOnSizeChanged;
+
+    events->Update = (void(*)(const void*))TestUpdate;
+    events->OnClick = (void(*)(const void*, int, int))TestOnClick;
+    events->OnKeyDown = (void(*)(const void*, int))TestOnKeyDown;
+    events->OnSizeChanged = (void(*)(const void*, int, int))TestOnSizeChanged;
     WindowSetEvents(win, events);
-    
+
     WindowDrawLine(win, Point2DCreate(10, 10), Point2DCreate(100, 100), ColorCreate(255, 0, 255));
 
     while (WindowUpdate(win, 120))

@@ -79,7 +79,7 @@ int ThreadCreate(Thread* thread, BALThreadStart startPoint, void* parameters)
         return BAL_THREAD_ERROR_CREATION;
     }
     *thread = _thrd;
-    SetThreadDescription(_thrd->threadHandle, _thrd);
+    SetThreadDescription(_thrd->threadHandle, (PCWSTR)_thrd);
 
     return BAL_THREAD_SUCCESS;
 }
@@ -100,7 +100,7 @@ int ThreadSleep(Thread thread, int miliseconds)
     }
     _params->thread = thread;
     _params->miliseconds = miliseconds;
-    HANDLE _h = CreateThread(0, 0, BalWait, _params, CREATE_SUSPENDED, 0);
+    HANDLE _h = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)BalWait, _params, CREATE_SUSPENDED, 0);
     if (_h == 0)
     {
         BAL_FREE(_params);
@@ -188,7 +188,7 @@ Thread ThreadGetCurrent()
             .threadID = _id,
             .exitCode = 0
         };
-        SetThreadDescription(_threadHandle, _thrd);
+        SetThreadDescription(_threadHandle, (PCWSTR)_thrd);
         return _thrd;
     }
     CloseHandle(_threadHandle);

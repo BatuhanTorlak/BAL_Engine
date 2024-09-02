@@ -95,7 +95,7 @@ void WindowRemoveComponent(Window window, Component* oldComponent);
 
 /// @brief Updates window's screen
 /// @param window [IN] Generic window manager
-void WindowRender(const Window window);
+void WindowRender(Window window);
 
 void WindowRenderRequest(Window window);
 
