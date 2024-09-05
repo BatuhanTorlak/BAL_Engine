@@ -10,5 +10,6 @@ compilewin:
 	$(CC) -c -IBALE $(GLOBAL_FILES) $(WIN_FILES) $(CFLAGS)
 	ar rcs BALE/libwbale.a *.o
 	rm *.o
+	cp BALE/libwbale.a test/Windows/BALE/libwbale.a
 
 compilelin:

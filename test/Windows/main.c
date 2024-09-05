@@ -4,7 +4,6 @@
 
 void TestUpdate(const Window win)
 {
-    printf("Update\n");
 }
 
 int _x = -1;

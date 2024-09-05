@@ -16,6 +16,8 @@ typedef struct __params_t
     const wchar_t* windowName;
     int width;
     int height;
+    int startX;
+    int startY;
     WinWindow* win;
     HANDLE mainThread;
     int started;
@@ -74,6 +76,7 @@ LRESULT WINAPI WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
         int _height = currentWindow->height;
         if (_width != _clp->width || _height != _clp->height)
         {
+            WaitForSingleObject(_clp->reserved, INFINITE);
             int _nW;
             int _nH;
             if (_width < _clp->width)
@@ -144,7 +147,8 @@ LRESULT WINAPI WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
                     _comp->events->OnSizeChanged(currentWindow, _comp, _width, _height);
             }
 
-	    currentWindow->drawing.renderOrder = 1;
+	        currentWindow->drawing.renderOrder = 1;
+            ReleaseMutex(_clp->reserved);
         }
         break;
     case WM_LBUTTONDOWN: ;
@@ -152,7 +156,7 @@ LRESULT WINAPI WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
         int _yPos = HIWORD(c);
 
         _yPos = currentWindow->height - _yPos;
-        
+
         // Window event
         if (currentWindow->events && currentWindow->events->OnClick)
             currentWindow->events->OnClick(currentWindow, _xPos, _yPos);
@@ -215,7 +219,7 @@ DWORD WINAPI WinWindowManagement(__paramsPtr param)
 
     ATOM _ch = RegisterClassW(&_class);
 
-    HWND windowHandler = CreateWindowExW(0, (LPCWSTR)_ch, param->windowName, WS_OVERLAPPEDWINDOW | WS_VISIBLE, 10, 10, param->width, param->height, 0, 0, 0, param);
+    HWND windowHandler = CreateWindowExW(0, (LPCWSTR)_ch, param->windowName, WS_OVERLAPPEDWINDOW | WS_VISIBLE, param->startX, param->startY, param->width, param->height, 0, 0, 0, param);
 
     WinWindow* win = param->win;
 
@@ -276,12 +280,16 @@ DWORD WINAPI WinWindowManagement(__paramsPtr param)
 
 WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, int yPos, int width, int height)
 {
-    HANDLE _threadHandle = GetCurrentThread();
+    HANDLE _threadHandle;
+    HANDLE _processHandle = GetCurrentProcess();
+    DuplicateHandle(_processHandle, GetCurrentThread(), _processHandle, &_threadHandle, DUPLICATE_SAME_ACCESS, 1, DUPLICATE_SAME_ACCESS);
 
     HANDLE _heapHandler = GetProcessHeap();
 
     //WinWindow* _ = BAL_MALLOC(sizeof(WinWindow));
-    WinWindow* _ = HeapAlloc(_heapHandler, HEAP_ZERO_MEMORY, sizeof(WinWindow));
+    WinWindow* _ = HeapAlloc(_heapHandler, 0, sizeof(WinWindow));
+
+    printf("0x%p\n", _);
 
     //__paramsPtr _param = BAL_MALLOC(sizeof(__params));
     __paramsPtr _param = HeapAlloc(_heapHandler, 0, sizeof(__params));
@@ -290,6 +298,8 @@ WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, 
         .windowName = name,
         .width = width,
         .height = height,
+        .startX = xPos,
+        .startY = yPos,
         .win = _,
         .mainThread = _threadHandle,
         .started = 1
@@ -302,16 +312,7 @@ WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, 
 
     SuspendThread(_threadHandle);
 
-    /*while (_param->started)
-    {
-        Sleep(1);
-    }
-
-    HeapFree(_heapHandler, 0, _param);*/
-
     CloseHandle(_heapHandler);
-
-    MoveWindow(_->windowHandler, xPos, yPos, width, height, FALSE);
 
     return _;
 }
@@ -336,7 +337,6 @@ void WindowSetPixel(WinWindow* win, Point2D position, Color color)
     if (win == 0 && win->isAlive)
     {
         ColorMapSetPixel(win->colorMap, position, color);
-        win->drawing.renderOrder = 1;
     }
 }
 
@@ -345,7 +345,6 @@ void WindowSetPixelA(WinWindow* win, int xPos, int yPos, Color color)
     if (win && win->isAlive)
     {
         ColorMapSetPixelA(win->colorMap, xPos, yPos, color);
-        win->drawing.renderOrder = 1;
     }
 }
 
@@ -354,7 +353,6 @@ void WindowDrawLine(WinWindow* win, Point2D start, Point2D end, Color color)
     if (win && win->isAlive)
     {
         ColorMapDrawLine(win->colorMap, start, end, color);
-        win->drawing.renderOrder = 1;
     }
 }
 
@@ -363,7 +361,6 @@ void WindowDrawLineA(WinWindow* win, int x1, int y1, int x2, int y2, Color color
     if (win && win->isAlive)
     {
         ColorMapDrawLineA(win->colorMap, x1, y1, x2, y2, color);
-	    win->drawing.renderOrder = 1;
     }
 }
 
@@ -377,7 +374,6 @@ void WindowClear(WinWindow* window)
         {
             WindowSetPixelA(window, x, y, BAL_DEFAULT_CLEAR_COLOR);
         }
-	window->drawing.renderOrder = 1;
     }
 }
 
@@ -391,7 +387,6 @@ void WindowClearA(WinWindow* window, Color color)
         {
             WindowSetPixelA(window, x, y, color);
         }
-	    window->drawing.renderOrder = 1;
     }
 }
 
@@ -412,7 +407,6 @@ void WindowSetSize(WinWindow* win, Point2D size)
     if (win && win->isAlive)
     {
         MoveWindow(win->windowHandler, win->position.x, win->position.y, size.x, size.y, FALSE);
-	win->drawing.renderOrder = 1;
     }
 }
 
@@ -421,7 +415,6 @@ void WindowSetSizeA(WinWindow* win, int xSize, int ySize)
     if (win && win->isAlive)
     {
         MoveWindow(win->windowHandler, win->position.x, win->position.y, xSize, ySize, FALSE);
-	win->drawing.renderOrder = 1;
     }
 }
 
@@ -489,9 +482,11 @@ void WindowRender(WinWindow* win)
     const restrict PColorMap colorMap = win->colorMap;
     const restrict HDC bitmapDrawingContentHandler = win->drawing.bitmapDrawingContentHandler;
 
+    WaitForSingleObject(colorMap->reserved, INFINITE);
     BOOL _x = BitBlt(_hdc, 0, 0, colorMap->width, colorMap->height, bitmapDrawingContentHandler, 0, 0, SRCCOPY);
 
     win->drawing.renderOrder = 0;
+    ReleaseMutex(colorMap->reserved);
 }
 
 void WindowRenderRequest(WinWindow* win)
@@ -508,7 +503,7 @@ char WindowUpdate(const WinWindow* win, const int FPS)
     WindowEvents events = win->events;
     if (events && events->Update)
         events->Update(win);
-    if (win->drawing.renderOrder)
+    if (win->drawing.renderOrder != 0)
 	    WindowRender(win);
     Sleep(1000 / FPS);
     return 1;
