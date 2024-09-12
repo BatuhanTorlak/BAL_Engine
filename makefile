@@ -1,6 +1,6 @@
 CC=gcc
 
-CFLAGS=-w -m64 -O3
+CFLAGS=-w -m64 -O3 -g
 
 GLOBAL_FILES=src/colormap/color.c src/math/point.c src/math/vector.c src/ui/events.c src/ui/component.c
 WIN_FILES=src/ui/windows/wui.c src/thread/windows/W_thread.c src/colormap/windows/colormap.c
@@ -10,6 +10,8 @@ compilewin:
 	$(CC) -c -IBALE $(GLOBAL_FILES) $(WIN_FILES) $(CFLAGS)
 	ar rcs BALE/libwbale.a *.o
 	rm *.o
-	cp BALE/libwbale.a test/Windows/BALE/libwbale.a
+
+testwindow:
+	cp BALE/libwbale.a test/Windows/WindowManager/BALE/libwbale.a
 
 compilelin:

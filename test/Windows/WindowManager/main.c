@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "bale.h"
+#include <bale.h>
 
 void TestUpdate(const Window win)
 {
@@ -27,14 +27,15 @@ void TestOnClick(const Window win, int xPos, int yPos)
 
 void TestOnKeyDown(const Window win, int charac)
 {
+    printf("%i\n", charac);
     if (charac == BAL_KEY_LSHIFT)
     {
         WindowSetSize(win, _posGoin);
+        printf("LSHIFT\n");
         _posGoin.x += 10;
         _posGoin.y += 10;
         return;
     }
-    printf("%c\n", charac);
 }
 
 void TestOnSizeChanged(const Window win, int xSize, int ySize)
@@ -44,19 +45,19 @@ void TestOnSizeChanged(const Window win, int xSize, int ySize)
 
 int main()
 {
+
+
     Window win = WindowCreateB(L"Pengu", 400, 400, 600, 300);
 
     PWindow pWin = &win;
     
     WindowEvents events = WindowEventsCreate();
 
-    events->Update = (void(*)(const void*))TestUpdate;
-    events->OnClick = (void(*)(const void*, int, int))TestOnClick;
-    events->OnKeyDown = (void(*)(const void*, int))TestOnKeyDown;
-    events->OnSizeChanged = (void(*)(const void*, int, int))TestOnSizeChanged;
+    events->Update = (WindowEventUpdate)TestUpdate;
+    events->OnClick = (WindowEventOnClick)TestOnClick;
+    events->OnKeyDown = (WindowEventOnKeyDown)TestOnKeyDown;
+    events->OnSizeChanged = (WindowEventOnSizeChanged)TestOnSizeChanged;
     WindowSetEvents(win, events);
-
-    WindowDrawLine(win, Point2DCreate(10, 10), Point2DCreate(100, 100), ColorCreate(255, 0, 255));
 
     while (WindowUpdate(win, 120))
     {

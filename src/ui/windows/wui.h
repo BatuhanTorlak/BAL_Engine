@@ -18,7 +18,7 @@ typedef struct WinWindow_t
     WindowEvents events;
     struct Drawing_t
     {
-	int renderOrder;
+	    int renderOrder;
         Color* bitmapColors;
         HBITMAP bitmap;
         HDC bitmapDrawingContentHandler;

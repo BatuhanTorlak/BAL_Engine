@@ -20,6 +20,7 @@ typedef struct __params_t
     int startY;
     WinWindow* win;
     HANDLE mainThread;
+    HANDLE myHeap;
     int started;
 } __params, *__paramsPtr;
 
@@ -46,7 +47,6 @@ LRESULT WINAPI WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
     WinWindow* currentWindow = (WinWindow*)GetWindowLongPtrA(hWnd, GWLP_USERDATA);
     if (currentWindow == 0 || currentWindow->isAlive == 0)
         return DefWindowProcW(hWnd, msg, b, c);
-
     switch (msg)
     {
     case WM_DESTROY:
@@ -131,8 +131,6 @@ LRESULT WINAPI WinWindowProc(HWND hWnd, UINT msg, WPARAM b, LPARAM c)
 
             DeleteDC(_oldDC);
             DeleteObject(_oldBitmap);
-	        CloseHandle(_oldBitmap);
-            CloseHandle(_oldDC);
 
             // Window event
             if (currentWindow->events && currentWindow->events->OnSizeChanged)
@@ -226,7 +224,7 @@ DWORD WINAPI WinWindowManagement(__paramsPtr param)
     win->windowHandler = windowHandler;
     win->windowClass = _class;
     win->drawingContentHandler = GetDC(windowHandler);
-    win->heapHandler = GetProcessHeap();
+    win->heapHandler = param->myHeap;
 
     BITMAPINFO _info = {
         .bmiHeader = {
@@ -253,7 +251,7 @@ DWORD WINAPI WinWindowManagement(__paramsPtr param)
 
     win->width = param->width;
     win->height = param->height;
-    win->events = 0;
+    //win->events = 0;
     win->drawing.renderOrder = 1;
     win->isAlive = 1;
 
@@ -284,12 +282,10 @@ WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, 
     HANDLE _processHandle = GetCurrentProcess();
     DuplicateHandle(_processHandle, GetCurrentThread(), _processHandle, &_threadHandle, DUPLICATE_SAME_ACCESS, 1, DUPLICATE_SAME_ACCESS);
 
-    HANDLE _heapHandler = GetProcessHeap();
+    HANDLE _heapHandler = HeapCreate(0, 0, 0);
 
     //WinWindow* _ = BAL_MALLOC(sizeof(WinWindow));
-    WinWindow* _ = HeapAlloc(_heapHandler, 0, sizeof(WinWindow));
-
-    printf("0x%p\n", _);
+    WinWindow* _ = HeapAlloc(_heapHandler, HEAP_ZERO_MEMORY, sizeof(WinWindow));
 
     //__paramsPtr _param = BAL_MALLOC(sizeof(__params));
     __paramsPtr _param = HeapAlloc(_heapHandler, 0, sizeof(__params));
@@ -302,6 +298,7 @@ WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, 
         .startY = yPos,
         .win = _,
         .mainThread = _threadHandle,
+        .myHeap = _heapHandler,
         .started = 1
     };
 
@@ -311,8 +308,6 @@ WinWindow* WinWindowCreate(const short* name, const short* className, int xPos, 
     _->threadHandler = CreateThread(0, 0, (DWORD(*)(LPVOID))WinWindowManagement, _param, 0, 0);
 
     SuspendThread(_threadHandle);
-
-    CloseHandle(_heapHandler);
 
     return _;
 }
@@ -438,11 +433,10 @@ void WindowAddComponent(WinWindow* win, Component* component)
     if (_win.componentsCount == _win.componentsCapacity)
     {
         win->componentManager.componentsCapacity = _win.componentsCount + 6;
-        Component** _comps = win->componentManager.components;
+        Component** _comps = _win.components;
         _comps = BAL_WIN_REALLOC(win, _comps, sizeof(Component*) * win->componentManager.componentsCapacity);
         win->componentManager.components = _comps;
-        BAL_FREE(_win.components);
-        _win.components = win->componentManager.components;
+        _win.components = _comps;
     }
     _win.components[_win.componentsCount] = component;
     win->componentManager.componentsCount++;
@@ -478,11 +472,12 @@ void WindowRender(WinWindow* win)
     if (win == 0 || win->isAlive == 0)
         return;
 
+    WaitForSingleObject(win->colorMap, INFINITE);
+
     const restrict HDC _hdc = win->drawingContentHandler;
     const restrict PColorMap colorMap = win->colorMap;
     const restrict HDC bitmapDrawingContentHandler = win->drawing.bitmapDrawingContentHandler;
 
-    WaitForSingleObject(colorMap->reserved, INFINITE);
     BOOL _x = BitBlt(_hdc, 0, 0, colorMap->width, colorMap->height, bitmapDrawingContentHandler, 0, 0, SRCCOPY);
 
     win->drawing.renderOrder = 0;
@@ -519,20 +514,19 @@ void WindowDestroy(const WinWindow** win)
     TerminateThread(_win->threadHandler, 0);
     CloseHandle(_win->threadHandler);
 
+    DestroyWindow(_win->windowHandler);
+
     ReleaseDC(_win->windowHandler, _win->drawingContentHandler);
     DeleteDC(_win->drawing.bitmapDrawingContentHandler);
-    CloseHandle(_win->drawingContentHandler);
-    CloseHandle(_win->drawing.bitmapDrawingContentHandler);
+    //CloseHandle(_win->drawingContentHandler);
+    //CloseHandle(_win->drawing.bitmapDrawingContentHandler);
 
     DeleteObject(_win->drawing.bitmap);
-    CloseHandle(_win->drawing.bitmapColors);
-
-    DestroyWindow(_win->windowHandler);
-    CloseHandle(_win->windowHandler);
+    //CloseHandle(_win->drawing.bitmapColors);
 
     UnregisterClassW(_win->windowClass.lpszClassName, 0);
 
     BAL_WIN_FREE(_win, _win->colorMap);
 
-    BAL_WIN_FREE(_win, _win);
+    HeapDestroy(_win->heapHandler);
 }
